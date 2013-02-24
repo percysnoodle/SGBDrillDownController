@@ -21,7 +21,6 @@
     if (self)
     {
         self.opaque = YES;
-        self.backgroundColor = [UIColor scrollViewTexturedBackgroundColor];
         
         _pushButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
         [_pushButton setTitle:@"Push!" forState:UIControlStateNormal];

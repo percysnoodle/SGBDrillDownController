@@ -30,6 +30,22 @@
 - (void)loadView
 {
     self.view = [[SGBDemoView  alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
+    
+    UIColor *color;
+    
+    switch (self.number % 7)
+    {
+        case 1: color = [[UIColor redColor] colorWithAlphaComponent:0.5]; break;
+        case 2: color = [[UIColor orangeColor] colorWithAlphaComponent:0.5]; break;
+        case 3: color = [[UIColor yellowColor] colorWithAlphaComponent:0.5]; break;
+        case 4: color = [[UIColor greenColor] colorWithAlphaComponent:0.5]; break;
+        case 5: color = [[UIColor cyanColor] colorWithAlphaComponent:0.5]; break;
+        case 6: color = [[UIColor blueColor] colorWithAlphaComponent:0.5]; break;
+        case 0: color = [[UIColor purpleColor] colorWithAlphaComponent:0.5]; break;
+            
+    }
+    
+    self.view.backgroundColor = color;
     self.demoView.delegate = self;
 }
 
@@ -40,7 +56,8 @@
 
 - (void)demoViewPushButtonTapped:(SGBDemoView *)demoView
 {
-    SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:self.number + 1];
+    SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
+    SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
     [self.drillDownController pushViewController:nextController animated:YES completion:nil];
 }
 

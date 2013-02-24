@@ -14,16 +14,19 @@
 @property (nonatomic, assign, readonly) Class toolbarClass;
 - (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass;
 
+@property (nonatomic, strong, readonly) UINavigationBar *leftNavigationBar;
+@property (nonatomic, strong, readonly) UINavigationBar *rightNavigationBar;
+
 @property (nonatomic, strong, readonly) NSArray *viewControllers;
+@property (nonatomic, strong, readonly) UIViewController *leftViewController;
+@property (nonatomic, strong, readonly) UIViewController *rightViewController;
+
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 
 @property (nonatomic, assign) CGFloat leftControllerWidth;
 
 @end
-
-@interface SGBDrillDownControllerLeftNavigationBar : UINavigationBar; @end
-@interface SGBDrillDownControllerRightNavigationBar : UINavigationBar; @end
 
 @interface UIViewController (SGBDrillDownController)
 
