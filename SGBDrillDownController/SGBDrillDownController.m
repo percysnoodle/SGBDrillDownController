@@ -8,9 +8,13 @@
 
 #import "SGBDrillDownController.h"
 
+NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
+
 @interface SGBDrillDownController () <UINavigationBarDelegate>
 
 @property (nonatomic, strong, readwrite) NSArray *viewControllers;
+
+@property (nonatomic, strong, readwrite) UIView *placeholderContainerView;
 @property (nonatomic, strong, readwrite) UINavigationBar *leftNavigationBar;
 @property (nonatomic, strong, readwrite) UINavigationBar *rightNavigationBar;
 
@@ -41,6 +45,8 @@
     return self;
 }
 
+#pragma mark - View loading / unloading
+
 - (void)loadView
 {
     self.view = [[UIView alloc] init];
@@ -53,6 +59,12 @@
     self.rightNavigationBar.delegate = self;
     [self.view addSubview:self.rightNavigationBar];
     
+    self.placeholderContainerView = [[UIView alloc] init];
+    self.placeholderContainerView.clipsToBounds = YES;
+    [self.view addSubview:self.placeholderContainerView];
+    
+    [self addPlaceholderToContainer];
+    
     [self.view setNeedsLayout];
 }
 
@@ -60,7 +72,11 @@
 {
     self.leftNavigationBar = nil;
     self.rightNavigationBar = nil;
+    
+    [self removePlaceholderFromContainer];
 }
+
+#pragma mark - Layout
 
 - (void)viewDidLayoutSubviews
 {
@@ -91,6 +107,61 @@
             viewController.view.frame = CGRectMake(-leftWidth, topHeight, leftWidth, bottomHeight);
         }
     }
+    
+    if (self.viewControllers.count > 1)
+    {
+        self.placeholderContainerView.frame = CGRectMake(leftWidth, topHeight, 0, bottomHeight);
+        self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
+    }
+    else if (self.viewControllers.count == 1)
+    {
+        self.placeholderContainerView.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
+        self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
+    }
+    else
+    {
+        self.placeholderContainerView.frame = CGRectMake(0, topHeight, width, bottomHeight);
+        self.placeholderController.view.frame = CGRectMake(0, 0, width, bottomHeight);
+    }
+}
+
+#pragma mark - Controllers
+
+- (void)removePlaceholderFromContainer
+{
+    if (self.placeholderController)
+    {
+        [self.placeholderController willMoveToParentViewController:nil];
+        [self.placeholderController.view removeFromSuperview];
+        [self.placeholderController removeFromParentViewController];
+        [self.placeholderController didMoveToParentViewController:nil];
+    }
+}
+
+- (void)addPlaceholderToContainer
+{
+    if (self.placeholderController)
+    {
+        [self.placeholderController willMoveToParentViewController:self];
+        [self.placeholderContainerView insertSubview:self.placeholderController.view atIndex:0];
+        [self addChildViewController:self.placeholderController];
+        [self.placeholderController didMoveToParentViewController:self];
+    }
+}
+
+- (void)setPlaceholderController:(UIViewController *)placeholderController
+{
+    if (placeholderController != _placeholderController)
+    {
+        [self removePlaceholderFromContainer];
+        
+        _placeholderController = placeholderController;
+        
+        [self addPlaceholderToContainer];
+        
+        [self.view setNeedsLayout];
+        [self.view layoutIfNeeded];
+    }
 }
 
 - (UIViewController *)leftViewController
@@ -106,98 +177,149 @@
     else return nil;
 }
 
+- (void)performAnimated:(BOOL)animated animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
+{
+    if (animated)
+    {
+        [UIView animateWithDuration:UINavigationControllerHideShowBarDuration animations:animations completion:completion];
+    }
+    else
+    {
+        if (animations) animations();
+        if (completion) completion(YES);
+    }
+}
+
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
-    if (viewController == nil) return;
+    if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
+    if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
+ 
+    BOOL pushingFirstController = (self.viewControllers.count == 0);
+    BOOL pushingSecondController = (self.viewControllers.count == 1);
+    BOOL pushingGeneralController = !pushingFirstController && !pushingSecondController;
     
-    if (self.viewControllers.count > 1)
-    {
-        [self.leftViewController viewWillDisappear:animated];
-    }
-    
-    NSArray *oldNavigationItems = [self.viewControllers valueForKey:@"navigationItem"];
+    UIViewController *oldLeftController = self.leftViewController;
+    UIViewController *oldRightController = self.rightViewController;
+    NSArray *oldViewControllers = self.viewControllers;
     
     self.viewControllers = [self.viewControllers arrayByAddingObject:viewController];
     
+    if (pushingSecondController)
+    {
+        // the second controller obscures the placeholder
+        [self.placeholderController viewWillDisappear:animated];
+    }
+    else if (pushingGeneralController)
+    {
+        // the old left controller will be hidden
+        [oldLeftController viewWillDisappear:animated];
+    }
+    
     [viewController willMoveToParentViewController:self];
     [self addChildViewController:viewController];
-    
     [self.view addSubview:viewController.view];
     
-    if (self.viewControllers.count == 1)
+    if (pushingFirstController)
     {
+        // The new controller will should be sized for the left
         viewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
-        [viewController.view setNeedsLayout];
-        [viewController.view layoutIfNeeded];
         
-        [self.rightNavigationBar setItems:@[] animated:animated];
+        // In theory our nav bars should be empty, so we just need to add the new one to the left.
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
     }
     else
     {
+        // The new controller will should be sized for the right
         viewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-        [viewController.view setNeedsLayout];
-        [viewController.view layoutIfNeeded];
-        
+    
         [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
-        [self.leftNavigationBar setItems:oldNavigationItems animated:animated];
+        [self.leftNavigationBar setItems:[oldViewControllers valueForKey:@"navigationItem"] animated:animated];
     }
     
-    if (animated)
-    {   
-        [UIView animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
+    [self performAnimated:animated animations:^{
             
-            [self.view setNeedsLayout];
-            [self.view layoutIfNeeded];
+        // The old left controller moves off
+        if (pushingGeneralController) oldLeftController.view.frame = CGRectMake(-self.leftControllerWidth, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        
+        if (pushingFirstController)
+        {
+            // The new controller moves to the left
+            viewController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        }
+        else
+        {
+            if (pushingSecondController)
+            {
+                // the placeholder shrinks to nothing
+                self.placeholderContainerView.frame = CGRectMake(self.leftControllerWidth, 44, 0, self.view.bounds.size.height - 44);
+            }
+            else
+            {
+                // The old right controller moves to the left
+                oldRightController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            }
             
-        } completion:^(BOOL finished) {
-            
-            [viewController didMoveToParentViewController:self];
-            if (completion) completion();
-            
-        }];
-    }
-    else
-    {
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
+            // The new controller moves to the right
+            viewController.view.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        }
+        
+    } completion:^(BOOL finished) {
+        
+        [viewController didMoveToParentViewController:self];
+        
+        if (pushingSecondController)
+        {
+            // the second controller obscured the placeholder
+            [self.placeholderController viewDidDisappear:animated];
+        }
+        else if (pushingGeneralController)
+        {
+            // the old left controller was hidden
+            [oldLeftController viewDidDisappear:animated];
+        }
         
         if (completion) completion();
-    }
+        
+    }];
 }
-
 
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
 {
-    if (self.viewControllers.count <= 1) return nil;
+    if (self.viewControllers.count < 1) return nil;
     
-    if (self.viewControllers.count > 2)
-    {
-        UIViewController *offscreenController = self.viewControllers[self.viewControllers.count - 3];
-        [offscreenController viewWillAppear:animated];
-    }
+    BOOL poppingLastController = (self.viewControllers.count == 1);
+    BOOL poppingSecondLastController = (self.viewControllers.count == 2);
+    BOOL poppingGeneralController = !poppingLastController && !poppingSecondLastController;
     
     UIViewController *poppedViewController = [self.viewControllers lastObject];
-    self.viewControllers = [self.viewControllers subarrayWithRange:NSMakeRange(0, self.viewControllers.count - 1)];
-    UIViewController *newLastViewController = [self.viewControllers lastObject];
     
-    if (self.viewControllers.count == 0)
+    self.viewControllers = [self.viewControllers subarrayWithRange:NSMakeRange(0, self.viewControllers.count - 1)];
+    
+    UIViewController *newLeftController = self.leftViewController;
+    UIViewController *newRightController = self.rightViewController;
+    
+    if (poppingSecondLastController)
+    {
+        // the placeholder will be revealed
+        [self.placeholderController viewWillAppear:animated];
+    }
+    else if (poppingGeneralController)
+    {
+        // the new left controller will be revealed
+        [newLeftController viewWillAppear:animated];
+    }
+    
+    if (poppingLastController)
     {
         [self.leftNavigationBar setItems:@[] animated:animated];
-        [self.rightNavigationBar setItems:@[] animated:animated];
     }
-    else if (self.viewControllers.count == 1)
+    else if (poppingSecondLastController)
     {
-        [self.leftNavigationBar setItems:@[ newLastViewController.navigationItem ] animated:animated];
-        
-        if (self.rightNavigationBar.items.count > 0)
-        {
-            // insert a fake item so that the navigation bar does a pop animation
-            UINavigationItem *lastItem = [[UINavigationItem alloc] init];
-            lastItem.hidesBackButton = YES;
-            [self.rightNavigationBar setItems:@[lastItem] animated:NO];
-        }
-        
+        // insert a fake item so that the navigation bar does a pop animation
+        UINavigationItem *lastItem = [[UINavigationItem alloc] init];
+        lastItem.hidesBackButton = YES;
+        [self.rightNavigationBar setItems:@[ lastItem ] animated:NO];
         [self.rightNavigationBar setItems:@[] animated:animated];
     }
     else
@@ -205,56 +327,58 @@
         NSArray *newNavigationItems = (self.viewControllers.count > 0) ? [[self.viewControllers subarrayWithRange:NSMakeRange(0, self.viewControllers.count - 1)] valueForKey:@"navigationItem"] : @[];
         
         [self.leftNavigationBar setItems:newNavigationItems animated:animated];
-        if (self.rightNavigationBar.items.count > 0)
-        {
-            // insert a fake item so that the navigation bar does a pop animation
-            UINavigationItem *lastItem = [[UINavigationItem alloc] init];
-            lastItem.hidesBackButton = YES;
-            [self.rightNavigationBar setItems:@[ newLastViewController.navigationItem, lastItem ] animated:NO];
-            [self.rightNavigationBar setItems:@[ newLastViewController.navigationItem ] animated:animated];
-        }
-        else
-        {
-            [self.rightNavigationBar setItems:@[ newLastViewController.navigationItem ] animated:animated];
-        }
+        
+        // insert a fake item so that the navigation bar does a pop animation
+        UINavigationItem *lastItem = [[UINavigationItem alloc] init];
+        lastItem.hidesBackButton = YES;
+        [self.rightNavigationBar setItems:@[ newRightController.navigationItem, lastItem ] animated:NO];
+        [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
     }
     
-    if (animated)
-    {
-        [poppedViewController willMoveToParentViewController:nil];
+    [poppedViewController willMoveToParentViewController:nil];
+    
+    [self performAnimated:animated animations:^{
         
-        [UIView animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
-           
-            poppedViewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
-           
-            [self.view setNeedsLayout];
-            [self.view layoutIfNeeded];
-            
-        } completion:^(BOOL finished) {
-            
-            [poppedViewController removeFromParentViewController];
-            [poppedViewController.view removeFromSuperview];
-            [poppedViewController didMoveToParentViewController:nil];
-            
-            if (completion) completion();
-            
-        }];
-    }
-    else
-    {
-        [poppedViewController willMoveToParentViewController:nil];
+        if (poppingSecondLastController)
+        {
+            // The placeholder grows to fil the space
+            self.placeholderContainerView.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        }
+        
+        // The new left controller moves to the left
+        newLeftController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        
+        // The new right controller moves to the right
+        newRightController.view.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        
+        // The popped controller moves off
+        poppedViewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
+        
+    } completion:^(BOOL finished) {
+        
         [poppedViewController removeFromParentViewController];
         [poppedViewController.view removeFromSuperview];
         [poppedViewController didMoveToParentViewController:nil];
         
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
+        if (poppingSecondLastController)
+        {
+            // the placeholder was revealed
+            [self.placeholderController viewDidAppear:animated];
+        }
+        else if (poppingGeneralController)
+        {
+            // the new left controller was revealed
+            [newLeftController viewDidAppear:animated];
+        }
         
         if (completion) completion();
-    }
+        
+    }];
     
     return poppedViewController;
 }
+
+#pragma mark - Navigation bar delegate
 
 - (BOOL)navigationBar:(UINavigationBar *)navigationBar shouldPopItem:(UINavigationItem *)item
 {

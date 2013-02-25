@@ -31,9 +31,9 @@
 {
     self.view = [[SGBDemoView  alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
     
-    UIColor *color;
+    UIColor *color = [[UIColor brownColor] colorWithAlphaComponent:0.5];
     
-    switch (self.number % 7)
+    if (self.number > 0) switch (self.number % 7)
     {
         case 1: color = [[UIColor redColor] colorWithAlphaComponent:0.5]; break;
         case 2: color = [[UIColor orangeColor] colorWithAlphaComponent:0.5]; break;
