@@ -380,7 +380,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
     if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
-    if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
+    if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a controller that is already in the stack"];
  
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
     self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
