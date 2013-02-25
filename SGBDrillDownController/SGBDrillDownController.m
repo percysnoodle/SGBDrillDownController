@@ -181,7 +181,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 {
     if (animated)
     {
-        [UIView animateWithDuration:UINavigationControllerHideShowBarDuration animations:animations completion:completion];
+        [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:animations completion:completion];
     }
     else
     {
