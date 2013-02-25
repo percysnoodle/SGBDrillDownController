@@ -26,11 +26,11 @@
         
         self.toolbarItems = @[
                               
-            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRewind target:nil action:nil],
+            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRewind target:self action:@selector(requestPop)],
             [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil],
             [[UIBarButtonItem alloc] initWithTitle:self.title style:UIBarButtonItemStylePlain target:nil action:nil],
             [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil],
-            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFastForward target:nil action:nil]
+            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFastForward target:self action:@selector(requestPush)]
             
         ];
     }
@@ -66,14 +66,42 @@
 
 - (void)demoViewPushButtonTapped:(SGBDemoView *)demoView
 {
-    SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
-    SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
-    [self.drillDownController pushViewController:nextController animated:YES completion:nil];
+    [self requestPush];
 }
 
 - (void)demoViewPopButtonTapped:(SGBDemoView *)demoView
 {
-    [self.drillDownController popViewControllerAnimated:YES completion:nil];
+    [self requestPop];
+}
+
+- (void)demoViewNavigationBarsButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestToggleNavigationBars];
+}
+
+- (void)demoViewToolbarsButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestToggleToolbars];
+}
+
+- (void)requestPush
+{
+    [self.delegate demoControllerDidRequestPush:self];
+}
+
+- (void)requestPop
+{
+    [self.delegate demoControllerDidRequestPop:self];
+}
+
+- (void)requestToggleNavigationBars
+{
+    [self.delegate demoControllerDidRequestToggleNavigationBars:self];
+}
+
+- (void)requestToggleToolbars
+{
+    [self.delegate demoControllerDidRequestToggleToolbars:self];
 }
 
 @end

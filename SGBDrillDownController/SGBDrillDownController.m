@@ -9,6 +9,8 @@
 #import "SGBDrillDownController.h"
 #import <QuartzCore/QuartzCore.h>
 
+#define kAnimationDuration 0.33
+
 typedef enum
 {
     SGBDrillDownNavigationBarPositionLeft,
@@ -77,6 +79,38 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         _viewControllers = [NSArray array];
     }
     return self;
+}
+
+- (void)setNavigationBarsHidden:(BOOL)navigationBarsHidden
+{
+    [self setNavigationBarsHidden:navigationBarsHidden animated:NO];
+}
+
+- (void)setNavigationBarsHidden:(BOOL)navigationBarsHidden animated:(BOOL)animated
+{
+    [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
+        
+        _navigationBarsHidden = navigationBarsHidden;
+        [self.view setNeedsLayout];
+        [self.view layoutIfNeeded];
+        
+    } completion:nil];
+}
+
+- (void)setToolbarsHidden:(BOOL)toolbarsHidden
+{
+    [self setToolbarsHidden:toolbarsHidden animated:NO];
+}
+
+- (void)setToolbarsHidden:(BOOL)toolbarsHidden animated:(BOOL)animated
+{
+    [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
+        
+        _toolbarsHidden = toolbarsHidden;
+        [self.view setNeedsLayout];
+        [self.view layoutIfNeeded];
+        
+    } completion:nil];
 }
 
 #pragma mark - View loading / unloading
@@ -326,11 +360,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     else return nil;
 }
 
-- (void)performAnimated:(BOOL)animated animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
+- (void)animateWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
 {
-    if (animated)
+    if (duration > 0)
     {
-        [UIView animateWithDuration:0.33
+        [UIView animateWithDuration:duration
                               delay:0
                             options:UIViewAnimationOptionCurveEaseInOut|UIViewAnimationOptionAllowAnimatedContent
                          animations:animations
@@ -417,7 +451,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         }
     }
     
-    [self performAnimated:animated animations:^{
+    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
+    [self animateWithDuration:animationDuration animations:^{
         
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
@@ -551,7 +586,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     [poppedViewController willMoveToParentViewController:nil];
     
-    [self performAnimated:animated animations:^{
+    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
+    [self animateWithDuration:animationDuration animations:^{
         
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
