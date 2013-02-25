@@ -14,7 +14,6 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 @property (nonatomic, strong, readwrite) NSArray *viewControllers;
 
-@property (nonatomic, strong, readwrite) UIView *placeholderContainerView;
 @property (nonatomic, strong, readwrite) UINavigationBar *leftNavigationBar;
 @property (nonatomic, strong, readwrite) UINavigationBar *rightNavigationBar;
 
@@ -59,10 +58,6 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.rightNavigationBar.delegate = self;
     [self.view addSubview:self.rightNavigationBar];
     
-    self.placeholderContainerView = [[UIView alloc] init];
-    self.placeholderContainerView.clipsToBounds = YES;
-    [self.view addSubview:self.placeholderContainerView];
-    
     [self addPlaceholderToContainer];
     
     [self.view setNeedsLayout];
@@ -96,32 +91,35 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         if (viewController == self.rightViewController)
         {
-            viewController.view.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
+            viewController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
+            viewController.view.superview.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
         }
         else if (viewController == self.leftViewController)
         {
-            viewController.view.frame = CGRectMake(0, topHeight, leftWidth, bottomHeight);
+            viewController.view.frame = CGRectMake(0, 0, leftWidth, bottomHeight);
+            viewController.view.superview.frame = CGRectMake(0, topHeight, leftWidth, bottomHeight);
         }
         else
         {
-            viewController.view.frame = CGRectMake(-leftWidth, topHeight, leftWidth, bottomHeight);
+            viewController.view.frame = CGRectMake(0, 0, leftWidth, bottomHeight);
+            viewController.view.superview.frame = CGRectMake(-leftWidth, topHeight, leftWidth, bottomHeight);
         }
     }
     
     if (self.viewControllers.count > 1)
     {
-        self.placeholderContainerView.frame = CGRectMake(leftWidth, topHeight, 0, bottomHeight);
         self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
+        self.placeholderController.view.superview.frame = CGRectMake(leftWidth, topHeight, 0, bottomHeight);
     }
     else if (self.viewControllers.count == 1)
     {
-        self.placeholderContainerView.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
         self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
+        self.placeholderController.view.superview.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
     }
     else
     {
-        self.placeholderContainerView.frame = CGRectMake(0, topHeight, width, bottomHeight);
         self.placeholderController.view.frame = CGRectMake(0, 0, width, bottomHeight);
+        self.placeholderController.view.superview.frame = CGRectMake(0, topHeight, width, bottomHeight);
     }
 }
 
@@ -132,6 +130,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (self.placeholderController)
     {
         [self.placeholderController willMoveToParentViewController:nil];
+        [self.placeholderController.view.superview removeFromSuperview];
         [self.placeholderController.view removeFromSuperview];
         [self.placeholderController removeFromParentViewController];
         [self.placeholderController didMoveToParentViewController:nil];
@@ -143,7 +142,12 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (self.placeholderController)
     {
         [self.placeholderController willMoveToParentViewController:self];
-        [self.placeholderContainerView insertSubview:self.placeholderController.view atIndex:0];
+        
+        UIView *containerView = [[UIView alloc] init];
+        containerView.clipsToBounds = YES;
+        [self.view insertSubview:containerView atIndex:0];
+        
+        [containerView addSubview:self.placeholderController.view];
         [self addChildViewController:self.placeholderController];
         [self.placeholderController didMoveToParentViewController:self];
     }
@@ -218,12 +222,17 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     [viewController willMoveToParentViewController:self];
     [self addChildViewController:viewController];
-    [self.view addSubview:viewController.view];
+    
+    UIView *containerView = [[UIView alloc] init];
+    containerView.clipsToBounds = YES;
+    [containerView addSubview:viewController.view];
+    [self.view addSubview:containerView];
     
     if (pushingFirstController)
     {
-        // The new controller will should be sized for the left
-        viewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        // The new controller should be sized for the left
+        viewController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        viewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
         
         // In theory our nav bars should be empty, so we just need to add the new one to the left.
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
@@ -231,7 +240,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     else
     {
         // The new controller will should be sized for the right
-        viewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        viewController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        viewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
     
         [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
         [self.leftNavigationBar setItems:[oldViewControllers valueForKey:@"navigationItem"] animated:animated];
@@ -239,29 +249,41 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     [self performAnimated:animated animations:^{
             
-        // The old left controller moves off
-        if (pushingGeneralController) oldLeftController.view.frame = CGRectMake(-self.leftControllerWidth, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        // The old left controller shrinks to nothing
+        if (pushingGeneralController)
+        {
+            oldLeftController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            oldLeftController.view.superview.frame = CGRectMake(0, 44, 0, self.view.bounds.size.height - 44);
+        }
         
         if (pushingFirstController)
         {
             // The new controller moves to the left
-            viewController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            viewController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            viewController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            
+            // The placeholder moves to the right
+            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
         }
         else
         {
             if (pushingSecondController)
             {
                 // the placeholder shrinks to nothing
-                self.placeholderContainerView.frame = CGRectMake(self.leftControllerWidth, 44, 0, self.view.bounds.size.height - 44);
+                self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+                self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, 0, self.view.bounds.size.height - 44);
             }
             else
             {
                 // The old right controller moves to the left
-                oldRightController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+                oldRightController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
+                oldRightController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
             }
             
             // The new controller moves to the right
-            viewController.view.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            viewController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            viewController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
         }
         
     } completion:^(BOOL finished) {
@@ -339,20 +361,30 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     [self performAnimated:animated animations:^{
         
-        if (poppingSecondLastController)
+        if (poppingLastController)
         {
-            // The placeholder grows to fil the space
-            self.placeholderContainerView.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            // The placeholder grows to fill the whole
+            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width, self.view.bounds.size.height - 44);
+            self.placeholderController.view.superview.frame = CGRectMake(0, 44, self.view.bounds.size.width, self.view.bounds.size.height - 44);
+        }
+        else if (poppingSecondLastController)
+        {
+            // The placeholder grows to fill the right
+            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
         }
         
         // The new left controller moves to the left
-        newLeftController.view.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        newLeftController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        newLeftController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
         
         // The new right controller moves to the right
-        newRightController.view.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        newRightController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        newRightController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
         
         // The popped controller moves off
-        poppedViewController.view.frame = CGRectMake(self.view.bounds.size.width, 44, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
+        poppedViewController.view.frame = CGRectMake(0, 0, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
+        poppedViewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
         
     } completion:^(BOOL finished) {
         
