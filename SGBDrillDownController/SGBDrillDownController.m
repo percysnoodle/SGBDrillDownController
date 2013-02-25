@@ -8,6 +8,17 @@
 
 #import "SGBDrillDownController.h"
 
+typedef enum
+{
+    SGBDrillDownFull,
+    SGBDrillDownLeft,
+    SGBDrillDownRight,
+    SGBDrillDownHiddenAtLeft,
+    SGBDrillDownHiddenAtRight,
+    SGBDrillDownOffscreen
+    
+} SGBDrillDownControllerPosition;
+
 NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
 
 @interface SGBDrillDownController () <UINavigationBarDelegate>
@@ -73,53 +84,81 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 #pragma mark - Layout
 
-- (void)viewDidLayoutSubviews
+- (void)showController:(UIViewController *)controller atPosition:(SGBDrillDownControllerPosition)position
 {
     CGFloat width = self.view.bounds.size.width;
-    CGFloat height = self.view.bounds.size.height;
+    CGFloat height = self.view.bounds.size.height - 44;
     
+    switch (position) {
+            
+        case SGBDrillDownFull:
+            controller.view.frame = CGRectMake(0, 0, width, height);
+            controller.view.superview.frame = CGRectMake(0, 44, width, height);
+            break;
+            
+        case SGBDrillDownLeft:
+            controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, height);
+            break;
+     
+        case SGBDrillDownRight:
+            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, width - self.leftControllerWidth, height);
+            break;
+            
+        case SGBDrillDownHiddenAtLeft:
+            controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(0, 44, 0, height);
+            break;
+            
+        case SGBDrillDownHiddenAtRight:
+            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, 0, height);
+            break;
+            
+        case SGBDrillDownOffscreen:
+            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(width, 44, width - self.leftControllerWidth, height);
+            break;
+            
+    }
+}
+
+- (void)viewDidLayoutSubviews
+{
     CGFloat leftWidth = self.leftControllerWidth;
-    CGFloat rightWidth = width - leftWidth;
+    CGFloat rightWidth = self.view.bounds.size.width - leftWidth;
     
-    CGFloat topHeight = 44;
-    CGFloat bottomHeight = height - 44;
-    
-    self.leftNavigationBar.frame = CGRectMake(0, 0, leftWidth, topHeight);
-    self.rightNavigationBar.frame = CGRectMake(leftWidth, 0, rightWidth, topHeight);
+    self.leftNavigationBar.frame = CGRectMake(0, 0, leftWidth, 44);
+    self.rightNavigationBar.frame = CGRectMake(leftWidth, 0, rightWidth, 44);
     
     for (UIViewController *viewController in self.viewControllers)
     {
         if (viewController == self.rightViewController)
         {
-            viewController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
-            viewController.view.superview.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
+            [self showController:viewController atPosition:SGBDrillDownRight];
         }
         else if (viewController == self.leftViewController)
         {
-            viewController.view.frame = CGRectMake(0, 0, leftWidth, bottomHeight);
-            viewController.view.superview.frame = CGRectMake(0, topHeight, leftWidth, bottomHeight);
+            [self showController:viewController atPosition:SGBDrillDownLeft];
         }
         else
         {
-            viewController.view.frame = CGRectMake(0, 0, leftWidth, bottomHeight);
-            viewController.view.superview.frame = CGRectMake(-leftWidth, topHeight, leftWidth, bottomHeight);
+            [self showController:viewController atPosition:SGBDrillDownHiddenAtLeft];
         }
     }
     
     if (self.viewControllers.count > 1)
     {
-        self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
-        self.placeholderController.view.superview.frame = CGRectMake(leftWidth, topHeight, 0, bottomHeight);
+        [self showController:self.placeholderController atPosition:SGBDrillDownHiddenAtRight];
     }
     else if (self.viewControllers.count == 1)
     {
-        self.placeholderController.view.frame = CGRectMake(0, 0, rightWidth, bottomHeight);
-        self.placeholderController.view.superview.frame = CGRectMake(leftWidth, topHeight, rightWidth, bottomHeight);
+        [self showController:self.placeholderController atPosition:SGBDrillDownRight];
     }
     else
     {
-        self.placeholderController.view.frame = CGRectMake(0, 0, width, bottomHeight);
-        self.placeholderController.view.superview.frame = CGRectMake(0, topHeight, width, bottomHeight);
+        [self showController:self.placeholderController atPosition:SGBDrillDownFull];
     }
 }
 
@@ -231,17 +270,18 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (pushingFirstController)
     {
         // The new controller should be sized for the left
-        viewController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
-        viewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        [self showController:viewController atPosition:SGBDrillDownHiddenAtLeft];
         
-        // In theory our nav bars should be empty, so we just need to add the new one to the left.
+        // The controller's coming in from the left, so we want a pop animation
+        UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
+        fakeItem.hidesBackButton = YES;
+        [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
     }
     else
     {
         // The new controller will should be sized for the right
-        viewController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-        viewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        [self showController:viewController atPosition:SGBDrillDownOffscreen];
     
         [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
         [self.leftNavigationBar setItems:[oldViewControllers valueForKey:@"navigationItem"] animated:animated];
@@ -252,38 +292,32 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         // The old left controller shrinks to nothing
         if (pushingGeneralController)
         {
-            oldLeftController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
-            oldLeftController.view.superview.frame = CGRectMake(0, 44, 0, self.view.bounds.size.height - 44);
+            [self showController:oldLeftController atPosition:SGBDrillDownHiddenAtLeft];
         }
         
         if (pushingFirstController)
         {
             // The new controller moves to the left
-            viewController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
-            viewController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+            [self showController:viewController atPosition:SGBDrillDownLeft];
             
             // The placeholder moves to the right
-            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-            self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            [self showController:self.placeholderController atPosition:SGBDrillDownRight];
         }
         else
         {
             if (pushingSecondController)
             {
                 // the placeholder shrinks to nothing
-                self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-                self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, 0, self.view.bounds.size.height - 44);
+                [self showController:self.placeholderController atPosition:SGBDrillDownHiddenAtRight];
             }
             else
             {
                 // The old right controller moves to the left
-                oldRightController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
-                oldRightController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+                [self showController:oldRightController atPosition:SGBDrillDownLeft];
             }
             
             // The new controller moves to the right
-            viewController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-            viewController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            [self showController:viewController atPosition:SGBDrillDownRight];
         }
         
     } completion:^(BOOL finished) {
@@ -339,9 +373,9 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     else if (poppingSecondLastController)
     {
         // insert a fake item so that the navigation bar does a pop animation
-        UINavigationItem *lastItem = [[UINavigationItem alloc] init];
-        lastItem.hidesBackButton = YES;
-        [self.rightNavigationBar setItems:@[ lastItem ] animated:NO];
+        UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
+        fakeItem.hidesBackButton = YES;
+        [self.rightNavigationBar setItems:@[ fakeItem ] animated:NO];
         [self.rightNavigationBar setItems:@[] animated:animated];
     }
     else
@@ -375,16 +409,21 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         }
         
         // The new left controller moves to the left
-        newLeftController.view.frame = CGRectMake(0, 0, self.leftControllerWidth, self.view.bounds.size.height - 44);
-        newLeftController.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, self.view.bounds.size.height - 44);
+        [self showController:newLeftController atPosition:SGBDrillDownLeft];
         
         // The new right controller moves to the right
-        newRightController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-        newRightController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+        [self showController:newRightController atPosition:SGBDrillDownRight];
         
-        // The popped controller moves off
-        poppedViewController.view.frame = CGRectMake(0, 0, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
-        poppedViewController.view.superview.frame = CGRectMake(self.view.bounds.size.width, 44, poppedViewController.view.frame.size.width, self.view.bounds.size.height - 44);
+        if (poppingLastController)
+        {
+            // The popped controller shrinks to nothing
+            [self showController:poppedViewController atPosition:SGBDrillDownHiddenAtLeft];
+        }
+        else
+        {
+            // The popped controller moves off
+            [self showController:poppedViewController atPosition:SGBDrillDownOffscreen];
+        }
         
     } completion:^(BOOL finished) {
         
