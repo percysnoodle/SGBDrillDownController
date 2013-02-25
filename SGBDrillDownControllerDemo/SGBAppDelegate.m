@@ -22,7 +22,6 @@
     [self.window makeKeyAndVisible];
     
     drillDownController.placeholderController = [[SGBDemoController alloc] initWithNumber:0];
-    [drillDownController pushViewController:[[SGBDemoController alloc] initWithNumber:1] animated:NO completion:nil];
     
     return YES;
 }

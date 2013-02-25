@@ -16,8 +16,13 @@ extern NSString * const SGBDrillDownControllerException;
 @property (nonatomic, assign, readonly) Class toolbarClass;
 - (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass;
 
+@property (nonatomic, assign) BOOL navigationBarsHidden;
 @property (nonatomic, strong, readonly) UINavigationBar *leftNavigationBar;
 @property (nonatomic, strong, readonly) UINavigationBar *rightNavigationBar;
+
+@property (nonatomic, assign) BOOL toolbarsHidden;
+@property (nonatomic, strong, readonly) UIToolbar *leftToolbar;
+@property (nonatomic, strong, readonly) UIToolbar *rightToolbar;
 
 @property (nonatomic, strong, readonly) NSArray *viewControllers;
 @property (nonatomic, strong, readonly) UIViewController *leftViewController;

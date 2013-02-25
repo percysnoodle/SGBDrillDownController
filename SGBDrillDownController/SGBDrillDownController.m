@@ -7,15 +7,30 @@
 //
 
 #import "SGBDrillDownController.h"
+#import <QuartzCore/QuartzCore.h>
 
 typedef enum
 {
-    SGBDrillDownFull,
-    SGBDrillDownLeft,
-    SGBDrillDownRight,
-    SGBDrillDownHiddenAtLeft,
-    SGBDrillDownHiddenAtRight,
-    SGBDrillDownOffscreen
+    SGBDrillDownNavigationBarPositionLeft,
+    SGBDrillDownNavigationBarPositionRight
+    
+} SGBDrillDownNavigationBarPosition;
+
+typedef enum
+{
+    SGBDrillDownToolbarPositionLeft,
+    SGBDrillDownToolbarPositionRight
+    
+} SGBDrillDownToolbarPosition;
+
+typedef enum
+{
+    SGBDrillDownControllerPositionFull,
+    SGBDrillDownControllerPositionLeft,
+    SGBDrillDownControllerPositionRight,
+    SGBDrillDownControllerPositionHiddenLeft,
+    SGBDrillDownControllerPositionHiddenMiddle,
+    SGBDrillDownControllerPositionHiddenRight
     
 } SGBDrillDownControllerPosition;
 
@@ -26,7 +41,15 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 @property (nonatomic, strong, readwrite) NSArray *viewControllers;
 
 @property (nonatomic, strong, readwrite) UINavigationBar *leftNavigationBar;
+
+@property (nonatomic, strong, readwrite) UIImageView *rightNavigationImageView;
 @property (nonatomic, strong, readwrite) UINavigationBar *rightNavigationBar;
+
+@property (nonatomic, strong, readwrite) UIImageView *leftToolbarImageView;
+@property (nonatomic, strong, readwrite) UIToolbar *leftToolbar;
+
+@property (nonatomic, strong, readwrite) UIImageView *rightToolbarImageView;
+@property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
 @end
 
@@ -49,6 +72,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         _navigationBarClass = navigationBarClass;
         _toolbarClass = toolbarClass;
+        _toolbarsHidden = YES;
         _leftControllerWidth = 320;
         _viewControllers = [NSArray array];
     }
@@ -65,9 +89,24 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.leftNavigationBar.delegate = self;
     [self.view addSubview:self.leftNavigationBar];
     
+    self.rightNavigationImageView = [[UIImageView alloc] init];
+    [self.view addSubview:self.rightNavigationImageView];
+    
     self.rightNavigationBar = [[self.navigationBarClass alloc] init];
     self.rightNavigationBar.delegate = self;
     [self.view addSubview:self.rightNavigationBar];
+    
+    self.leftToolbarImageView = [[UIImageView alloc] init];
+    [self.view addSubview:self.leftToolbarImageView];
+    
+    self.leftToolbar = [[self.toolbarClass alloc] init];
+    [self.view addSubview:self.leftToolbar];
+    
+    self.rightToolbarImageView = [[UIImageView alloc] init];
+    [self.view addSubview:self.rightToolbarImageView];
+    
+    self.rightToolbar = [[self.toolbarClass alloc] init];
+    [self.view addSubview:self.rightToolbar];
     
     [self addPlaceholderToContainer];
     
@@ -84,41 +123,99 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 #pragma mark - Layout
 
-- (void)showController:(UIViewController *)controller atPosition:(SGBDrillDownControllerPosition)position
+- (void)layoutNavigationBar:(UINavigationBar *)navigationBar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownNavigationBarPosition)position
 {
-    CGFloat width = self.view.bounds.size.width;
-    CGFloat height = self.view.bounds.size.height - 44;
+    CGFloat top = 0;
+    CGFloat height = 44;
+    if (self.navigationBarsHidden) top -= height;
     
-    switch (position) {
-            
-        case SGBDrillDownFull:
-            controller.view.frame = CGRectMake(0, 0, width, height);
-            controller.view.superview.frame = CGRectMake(0, 44, width, height);
+    CGRect frame;
+    
+    switch (position)
+    {
+        case SGBDrillDownNavigationBarPositionLeft:
+            frame = CGRectMake(0, top, self.leftControllerWidth, height);
             break;
             
-        case SGBDrillDownLeft:
+        case SGBDrillDownNavigationBarPositionRight:
+            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
+            break;
+    }
+    
+    navigationBar.frame = frame;
+    imageView.frame = frame;
+}
+
+- (void)layoutToolbar:(UIToolbar *)toolbar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownToolbarPosition)position
+{
+    CGFloat top = self.view.bounds.size.height;
+    CGFloat height = 44;
+    if (!self.toolbarsHidden) top -= height;
+    
+    CGRect frame;
+    
+    switch (position)
+    {
+        case SGBDrillDownToolbarPositionLeft:
+            frame = CGRectMake(0, top, self.leftControllerWidth, height);
+            break;
+            
+        case SGBDrillDownToolbarPositionRight:
+            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
+            break;
+    }
+    
+    toolbar.frame = frame;
+    imageView.frame = frame;
+}
+
+- (void)layoutController:(UIViewController *)controller atPosition:(SGBDrillDownControllerPosition)position
+{
+    CGFloat top = 0;
+    CGFloat width = self.view.bounds.size.width;
+    CGFloat height = self.view.bounds.size.height;
+    
+    if (!self.navigationBarsHidden)
+    {
+        top += 44;
+        height -= 44;
+    }
+    
+    if (!self.toolbarsHidden)
+    {
+        height -= 44;
+    }
+    
+    switch (position)
+    {
+        case SGBDrillDownControllerPositionFull:
+            controller.view.frame = CGRectMake(0, 0, width, height);
+            controller.view.superview.frame = CGRectMake(0, top, width, height);
+            break;
+            
+        case SGBDrillDownControllerPositionLeft:
             controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(0, 44, self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(0, top, self.leftControllerWidth, height);
             break;
      
-        case SGBDrillDownRight:
+        case SGBDrillDownControllerPositionRight:
             controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, width - self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, top, width - self.leftControllerWidth, height);
             break;
             
-        case SGBDrillDownHiddenAtLeft:
+        case SGBDrillDownControllerPositionHiddenLeft:
             controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(0, 44, 0, height);
+            controller.view.superview.frame = CGRectMake(0, top, 0, height);
             break;
             
-        case SGBDrillDownHiddenAtRight:
+        case SGBDrillDownControllerPositionHiddenMiddle:
             controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, 0, height);
+            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, top, 0, height);
             break;
             
-        case SGBDrillDownOffscreen:
+        case SGBDrillDownControllerPositionHiddenRight:
             controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(width, 44, width - self.leftControllerWidth, height);
+            controller.view.superview.frame = CGRectMake(width, top, width - self.leftControllerWidth, height);
             break;
             
     }
@@ -126,40 +223,49 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 - (void)viewDidLayoutSubviews
 {
-    CGFloat leftWidth = self.leftControllerWidth;
-    CGFloat rightWidth = self.view.bounds.size.width - leftWidth;
+    [self layoutNavigationBar:self.leftNavigationBar imageView:nil atPosition:SGBDrillDownNavigationBarPositionLeft];
+    [self layoutNavigationBar:self.rightNavigationBar imageView:self.rightNavigationImageView atPosition:SGBDrillDownNavigationBarPositionRight];
     
-    self.leftNavigationBar.frame = CGRectMake(0, 0, leftWidth, 44);
-    self.rightNavigationBar.frame = CGRectMake(leftWidth, 0, rightWidth, 44);
+    [self layoutToolbar:self.leftToolbar imageView:self.leftToolbarImageView atPosition:SGBDrillDownToolbarPositionLeft];
+    [self layoutToolbar:self.rightToolbar imageView:self.rightToolbarImageView atPosition:SGBDrillDownToolbarPositionRight];
     
     for (UIViewController *viewController in self.viewControllers)
     {
         if (viewController == self.rightViewController)
         {
-            [self showController:viewController atPosition:SGBDrillDownRight];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight];
         }
         else if (viewController == self.leftViewController)
         {
-            [self showController:viewController atPosition:SGBDrillDownLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft];
         }
         else
         {
-            [self showController:viewController atPosition:SGBDrillDownHiddenAtLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
         }
     }
     
     if (self.viewControllers.count > 1)
     {
-        [self showController:self.placeholderController atPosition:SGBDrillDownHiddenAtRight];
+        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionHiddenMiddle];
     }
     else if (self.viewControllers.count == 1)
     {
-        [self showController:self.placeholderController atPosition:SGBDrillDownRight];
+        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionRight];
     }
     else
     {
-        [self showController:self.placeholderController atPosition:SGBDrillDownFull];
+        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionFull];
     }
+}
+
+- (UIImage *)imageForView:(UIView *)view
+{
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, view.opaque, [[UIScreen mainScreen] scale]);
+    [view.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage * img = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return img;
 }
 
 #pragma mark - Controllers
@@ -224,7 +330,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 {
     if (animated)
     {
-        [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:animations completion:completion];
+        [UIView animateWithDuration:0.33
+                              delay:0
+                            options:UIViewAnimationOptionCurveEaseInOut|UIViewAnimationOptionAllowAnimatedContent
+                         animations:animations
+                         completion:completion];
     }
     else
     {
@@ -238,6 +348,12 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
     if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
  
+    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    
+    // Work out what sort of push this is
     BOOL pushingFirstController = (self.viewControllers.count == 0);
     BOOL pushingSecondController = (self.viewControllers.count == 1);
     BOOL pushingGeneralController = !pushingFirstController && !pushingSecondController;
@@ -270,57 +386,79 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (pushingFirstController)
     {
         // The new controller should be sized for the left
-        [self showController:viewController atPosition:SGBDrillDownHiddenAtLeft];
+        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
         
         // The controller's coming in from the left, so we want a pop animation
         UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
         fakeItem.hidesBackButton = YES;
         [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
+        
+        self.leftToolbar.items = viewController.toolbarItems;
+        self.leftToolbar.alpha = 0;
     }
     else
     {
         // The new controller will should be sized for the right
-        [self showController:viewController atPosition:SGBDrillDownOffscreen];
-    
+        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenRight];
+        
         [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
+        self.rightNavigationBar.alpha = 0;
+        
         [self.leftNavigationBar setItems:[oldViewControllers valueForKey:@"navigationItem"] animated:animated];
+        
+        self.rightToolbar.items = viewController.toolbarItems;
+        self.rightToolbar.alpha = 0;
+        
+        if (pushingGeneralController)
+        {
+            self.leftToolbar.items = [[oldViewControllers lastObject] toolbarItems];
+            self.leftToolbar.alpha = 0;
+        }
     }
     
     [self performAnimated:animated animations:^{
+        
+        self.rightNavigationBar.alpha = 1;
+        self.leftToolbar.alpha = 1;
+        self.rightToolbar.alpha = 1;
             
         // The old left controller shrinks to nothing
         if (pushingGeneralController)
         {
-            [self showController:oldLeftController atPosition:SGBDrillDownHiddenAtLeft];
+            [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionHiddenLeft];
         }
         
         if (pushingFirstController)
         {
             // The new controller moves to the left
-            [self showController:viewController atPosition:SGBDrillDownLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft];
             
             // The placeholder moves to the right
-            [self showController:self.placeholderController atPosition:SGBDrillDownRight];
+            [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionRight];
         }
         else
         {
             if (pushingSecondController)
             {
                 // the placeholder shrinks to nothing
-                [self showController:self.placeholderController atPosition:SGBDrillDownHiddenAtRight];
+                [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionHiddenMiddle];
             }
             else
             {
                 // The old right controller moves to the left
-                [self showController:oldRightController atPosition:SGBDrillDownLeft];
+                [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft];
             }
             
             // The new controller moves to the right
-            [self showController:viewController atPosition:SGBDrillDownRight];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight];
         }
         
     } completion:^(BOOL finished) {
+        
+        self.rightNavigationImageView.image = nil;
+        self.leftToolbarImageView.image = nil;
+        self.rightToolbarImageView.image = nil;
         
         [viewController didMoveToParentViewController:self];
         
@@ -344,6 +482,12 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 {
     if (self.viewControllers.count < 1) return nil;
     
+    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    
+    // Work out what sort of pop this is
     BOOL poppingLastController = (self.viewControllers.count == 1);
     BOOL poppingSecondLastController = (self.viewControllers.count == 2);
     BOOL poppingGeneralController = !poppingLastController && !poppingSecondLastController;
@@ -369,6 +513,9 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (poppingLastController)
     {
         [self.leftNavigationBar setItems:@[] animated:animated];
+        
+        self.leftToolbar.items = @[];
+        self.leftToolbar.alpha = 0;
     }
     else if (poppingSecondLastController)
     {
@@ -377,6 +524,10 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         fakeItem.hidesBackButton = YES;
         [self.rightNavigationBar setItems:@[ fakeItem ] animated:NO];
         [self.rightNavigationBar setItems:@[] animated:animated];
+        self.rightNavigationBar.alpha = 0;
+        
+        self.rightToolbar.items = @[];
+        self.rightToolbar.alpha = 0;
     }
     else
     {
@@ -384,16 +535,27 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
         [self.leftNavigationBar setItems:newNavigationItems animated:animated];
         
+        self.leftToolbar.items = newLeftController.toolbarItems;
+        self.leftToolbar.alpha = 0;
+        
         // insert a fake item so that the navigation bar does a pop animation
         UINavigationItem *lastItem = [[UINavigationItem alloc] init];
         lastItem.hidesBackButton = YES;
         [self.rightNavigationBar setItems:@[ newRightController.navigationItem, lastItem ] animated:NO];
         [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
+        self.rightNavigationBar.alpha = 0;
+        
+        self.rightToolbar.items = newRightController.toolbarItems;
+        self.rightToolbar.alpha = 0;
     }
     
     [poppedViewController willMoveToParentViewController:nil];
     
     [self performAnimated:animated animations:^{
+        
+        self.rightNavigationBar.alpha = 1;
+        self.leftToolbar.alpha = 1;
+        self.rightToolbar.alpha = 1;
         
         if (poppingLastController)
         {
@@ -409,23 +571,27 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         }
         
         // The new left controller moves to the left
-        [self showController:newLeftController atPosition:SGBDrillDownLeft];
+        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft];
         
         // The new right controller moves to the right
-        [self showController:newRightController atPosition:SGBDrillDownRight];
+        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight];
         
         if (poppingLastController)
         {
             // The popped controller shrinks to nothing
-            [self showController:poppedViewController atPosition:SGBDrillDownHiddenAtLeft];
+            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
         }
         else
         {
             // The popped controller moves off
-            [self showController:poppedViewController atPosition:SGBDrillDownOffscreen];
+            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionHiddenRight];
         }
         
     } completion:^(BOOL finished) {
+        
+        self.rightNavigationBar.alpha = 1;
+        self.leftToolbar.alpha = 1;
+        self.rightToolbar.alpha = 1;
         
         [poppedViewController removeFromParentViewController];
         [poppedViewController.view removeFromSuperview];

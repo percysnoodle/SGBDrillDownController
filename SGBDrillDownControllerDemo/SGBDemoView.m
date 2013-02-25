@@ -23,11 +23,13 @@
         self.opaque = YES;
         
         _pushButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _pushButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         [_pushButton setTitle:@"Push!" forState:UIControlStateNormal];
         [_pushButton addTarget:self action:@selector(pushButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_pushButton];
         
         _popButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _popButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         [_popButton setTitle:@"Pop!" forState:UIControlStateNormal];
         [_popButton addTarget:self action:@selector(popButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_popButton];
