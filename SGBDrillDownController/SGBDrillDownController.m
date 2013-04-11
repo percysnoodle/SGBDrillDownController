@@ -654,6 +654,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
     } completion:^(BOOL finished) {
         
+        self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
         self.rightToolbar.alpha = 1;
