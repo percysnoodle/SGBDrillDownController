@@ -463,6 +463,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         self.rightNavigationBar.alpha = 0;
         
         [self.leftNavigationBar setItems:[oldViewControllers valueForKey:@"navigationItem"] animated:animated];
+        self.leftNavigationBar.alpha = 0;
         
         self.rightToolbar.items = viewController.toolbarItems;
         self.rightToolbar.alpha = 0;
