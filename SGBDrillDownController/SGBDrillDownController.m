@@ -12,30 +12,21 @@
 
 #define kAnimationDuration 0.33
 
-typedef enum
+typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
 {
-    SGBDrillDownNavigationBarPositionLeft,
-    SGBDrillDownNavigationBarPositionRight
-    
-} SGBDrillDownNavigationBarPosition;
-
-typedef enum
-{
-    SGBDrillDownToolbarPositionLeft,
-    SGBDrillDownToolbarPositionRight
-    
-} SGBDrillDownToolbarPosition;
-
-typedef enum
-{
-    SGBDrillDownControllerPositionFull,
     SGBDrillDownControllerPositionLeft,
-    SGBDrillDownControllerPositionRight,
-    SGBDrillDownControllerPositionHiddenLeft,
-    SGBDrillDownControllerPositionHiddenMiddle,
-    SGBDrillDownControllerPositionHiddenRight
+    SGBDrillDownControllerPositionRight
     
-} SGBDrillDownControllerPosition;
+};
+
+typedef NS_ENUM(NSInteger, SGBDrillDownControllerVisibility)
+{
+    SGBDrillDownControllerVisibilityOffscreenLeft,
+    SGBDrillDownControllerVisibilityHiddenLeft,
+    SGBDrillDownControllerVisibilityShowing,
+    SGBDrillDownControllerVisibilityHiddenRight,
+    SGBDrillDownControllerVisibilityOffscreenRight
+};
 
 NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
 
@@ -147,7 +138,15 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.rightToolbar = [[self.toolbarClass alloc] init];
     [self.view addSubview:self.rightToolbar];
     
-    [self addPlaceholderToContainer];
+    if (self.leftPlaceholderController)
+    {
+        [self addPlaceholderToContainer:self.leftPlaceholderController];
+    }
+    
+    if (self.rightPlaceholderController)
+    {
+        [self addPlaceholderToContainer:self.rightPlaceholderController];
+    }
     
     [self.view setNeedsLayout];
 }
@@ -157,7 +156,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.leftNavigationBar = nil;
     self.rightNavigationBar = nil;
     
-    [self removePlaceholderFromContainer];
+    [self removePlaceholderFromContainer:self.leftPlaceholderController];
+    [self removePlaceholderFromContainer:self.rightPlaceholderController];
 }
 
 #pragma mark - Rotation
@@ -179,7 +179,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 #pragma mark - Layout
 
-- (void)layoutNavigationBar:(UINavigationBar *)navigationBar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownNavigationBarPosition)position
+- (void)layoutNavigationBar:(UINavigationBar *)navigationBar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownControllerPosition)position
 {
     CGFloat top = 0;
     CGFloat height = 44;
@@ -189,11 +189,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     switch (position)
     {
-        case SGBDrillDownNavigationBarPositionLeft:
+        case SGBDrillDownControllerPositionLeft:
             frame = CGRectMake(0, top, self.leftControllerWidth, height);
             break;
             
-        case SGBDrillDownNavigationBarPositionRight:
+        case SGBDrillDownControllerPositionRight:
             frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
             break;
     }
@@ -202,7 +202,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     imageView.frame = frame;
 }
 
-- (void)layoutToolbar:(UIToolbar *)toolbar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownToolbarPosition)position
+- (void)layoutToolbar:(UIToolbar *)toolbar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownControllerPosition)position
 {
     CGFloat top = self.view.bounds.size.height;
     CGFloat height = 44;
@@ -212,11 +212,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     switch (position)
     {
-        case SGBDrillDownToolbarPositionLeft:
+        case SGBDrillDownControllerPositionLeft:
             frame = CGRectMake(0, top, self.leftControllerWidth, height);
             break;
             
-        case SGBDrillDownToolbarPositionRight:
+        case SGBDrillDownControllerPositionRight:
             frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
             break;
     }
@@ -225,7 +225,9 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     imageView.frame = frame;
 }
 
-- (void)layoutController:(UIViewController *)controller atPosition:(SGBDrillDownControllerPosition)position
+- (void)layoutController:(UIViewController *)controller
+              atPosition:(SGBDrillDownControllerPosition)position
+              visibility:(SGBDrillDownControllerVisibility)visibility
 {
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
@@ -242,76 +244,94 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         height -= 44;
     }
     
+    CGFloat containerLeft = 0, viewLeft = 0;
+    CGFloat viewWidth;
+    
     switch (position)
     {
-        case SGBDrillDownControllerPositionFull:
-            controller.view.frame = CGRectMake(0, 0, width, height);
-            controller.view.drillDownContainerView.frame = CGRectMake(0, top, width, height);
-            break;
-            
         case SGBDrillDownControllerPositionLeft:
-            controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.drillDownContainerView.frame = CGRectMake(0, top, self.leftControllerWidth, height);
+            viewWidth = self.leftControllerWidth;
             break;
-     
+            
         case SGBDrillDownControllerPositionRight:
-            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
-            controller.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth + 1, top, width - (self.leftControllerWidth + 1), height);
+            containerLeft = self.leftControllerWidth + 1;
+            viewWidth = width - containerLeft;
             break;
-            
-        case SGBDrillDownControllerPositionHiddenLeft:
-            controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.drillDownContainerView.frame = CGRectMake(0, top, 0, height);
-            break;
-            
-        case SGBDrillDownControllerPositionHiddenMiddle:
-            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
-            controller.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth, top, 0, height);
-            break;
-            
-        case SGBDrillDownControllerPositionHiddenRight:
-            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
-            controller.view.drillDownContainerView.frame = CGRectMake(width, top, width - (self.leftControllerWidth + 1), height);
-            break;
-            
     }
+    
+    
+    CGFloat containerWidth = viewWidth;
+    
+    switch (visibility)
+    {
+        case SGBDrillDownControllerVisibilityOffscreenLeft:
+            viewLeft = -viewWidth;
+            containerWidth = 0;
+            break;
+            
+        case SGBDrillDownControllerVisibilityHiddenLeft:
+            containerWidth = 0;
+            break;
+            
+        case SGBDrillDownControllerVisibilityShowing:
+            break;
+            
+        case SGBDrillDownControllerVisibilityHiddenRight:
+            viewLeft = -viewWidth;
+            containerLeft += viewWidth;
+            containerWidth = 0;
+            break;
+            
+        case SGBDrillDownControllerVisibilityOffscreenRight:
+            containerLeft += viewWidth;
+            containerWidth = 0;
+            break;
+    }
+    
+    controller.view.frame = CGRectMake(viewLeft, 0, viewWidth, height);
+    controller.view.drillDownContainerView.frame = CGRectMake(containerLeft, top, containerWidth, height);
 }
 
 - (void)viewDidLayoutSubviews
 {
-    [self layoutNavigationBar:self.leftNavigationBar imageView:self.leftNavigationImageView atPosition:SGBDrillDownNavigationBarPositionLeft];
-    [self layoutNavigationBar:self.rightNavigationBar imageView:self.rightNavigationImageView atPosition:SGBDrillDownNavigationBarPositionRight];
+    [self layoutNavigationBar:self.leftNavigationBar imageView:self.leftNavigationImageView atPosition:SGBDrillDownControllerPositionLeft];
+    [self layoutNavigationBar:self.rightNavigationBar imageView:self.rightNavigationImageView atPosition:SGBDrillDownControllerPositionRight];
     
-    [self layoutToolbar:self.leftToolbar imageView:self.leftToolbarImageView atPosition:SGBDrillDownToolbarPositionLeft];
-    [self layoutToolbar:self.rightToolbar imageView:self.rightToolbarImageView atPosition:SGBDrillDownToolbarPositionRight];
+    [self layoutToolbar:self.leftToolbar imageView:self.leftToolbarImageView atPosition:SGBDrillDownControllerPositionLeft];
+    [self layoutToolbar:self.rightToolbar imageView:self.rightToolbarImageView atPosition:SGBDrillDownControllerPositionRight];
     
     for (UIViewController *viewController in self.viewControllers)
     {
         if (viewController == self.rightViewController)
         {
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
         }
         else if (viewController == self.leftViewController)
         {
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
         }
         else
         {
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenLeft];
         }
     }
     
-    if (self.viewControllers.count > 1)
+    if (self.leftViewController)
     {
-        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionHiddenMiddle];
-    }
-    else if (self.viewControllers.count == 1)
-    {
-        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionRight];
+        [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenRight];
     }
     else
     {
-        [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionFull];
+        [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
+    }
+    
+    if (self.rightViewController)
+    {
+        [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenLeft];
+    }
+    else
+    {
+        [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
     }
 }
 
@@ -326,45 +346,66 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 #pragma mark - Controllers
 
-- (void)removePlaceholderFromContainer
+- (void)removePlaceholderFromContainer:(UIViewController *)placeholderController
 {
-    if (self.placeholderController)
+    if (placeholderController)
     {
-        [self.placeholderController willMoveToParentViewController:nil];
-        [self.placeholderController.view.drillDownContainerView removeFromSuperview];
-        [self.placeholderController.view removeFromSuperview];
-        [self.placeholderController removeFromParentViewController];
-        [self.placeholderController didMoveToParentViewController:nil];
+        [placeholderController willMoveToParentViewController:nil];
+        [placeholderController.view.drillDownContainerView removeFromSuperview];
+        [placeholderController.view removeFromSuperview];
+        [placeholderController removeFromParentViewController];
+        [placeholderController didMoveToParentViewController:nil];
     }
 }
 
-- (void)addPlaceholderToContainer
+- (void)addPlaceholderToContainer:(UIViewController *)placeholderController
 {
-    if (self.placeholderController)
+    if (placeholderController)
     {
-        [self.placeholderController willMoveToParentViewController:self];
+        [placeholderController willMoveToParentViewController:self];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
         [self.view insertSubview:containerView atIndex:0];
         
-        [containerView addViewToContentView:self.placeholderController.view];
-        [self addChildViewController:self.placeholderController];
-        [self.placeholderController didMoveToParentViewController:self];
+        [containerView addViewToContentView:placeholderController.view];
+        [self addChildViewController:placeholderController];
+        [placeholderController didMoveToParentViewController:self];
     }
 }
 
-- (void)setPlaceholderController:(UIViewController *)placeholderController
+- (void)setLeftPlaceholderController:(UIViewController *)leftPlaceholderController
 {
-    if (placeholderController != _placeholderController)
+    if (leftPlaceholderController != _leftPlaceholderController)
     {
-        [self removePlaceholderFromContainer];
+        if (self.isViewLoaded) [self removePlaceholderFromContainer:leftPlaceholderController];
         
-        _placeholderController = placeholderController;
+        _leftPlaceholderController = leftPlaceholderController;
         
-        [self addPlaceholderToContainer];
+        if (self.isViewLoaded)
+        {
+            [self addPlaceholderToContainer:leftPlaceholderController];
+            
+            [self.view setNeedsLayout];
+            [self.view layoutIfNeeded];
+        }
+    }
+}
+
+- (void)setRightPlaceholderController:(UIViewController *)rightPlaceholderController
+{
+    if (rightPlaceholderController != _rightPlaceholderController)
+    {
+        if (self.isViewLoaded) [self removePlaceholderFromContainer:rightPlaceholderController];
         
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
+        _rightPlaceholderController = rightPlaceholderController;
+        
+        if (self.isViewLoaded)
+        {
+            [self addPlaceholderToContainer:rightPlaceholderController];
+            
+            [self.view setNeedsLayout];
+            [self.view layoutIfNeeded];
+        }
     }
 }
 
@@ -420,10 +461,15 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     
     self.viewControllers = [self.viewControllers arrayByAddingObject:viewController];
     
+    if (pushingFirstController)
+    {
+        // the first controller obscures the left placeholder
+        [self.leftPlaceholderController viewWillDisappear:animated];
+    }
     if (pushingSecondController)
     {
-        // the second controller obscures the placeholder
-        [self.placeholderController viewWillDisappear:animated];
+        // the second controller obscures the right placeholder
+        [self.rightPlaceholderController viewWillDisappear:animated];
     }
     else if (pushingGeneralController)
     {
@@ -441,7 +487,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (pushingFirstController)
     {
         // The new controller should be sized for the left
-        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
+        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
         
         // The controller's coming in from the left, so we want a pop animation
         UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
@@ -456,7 +502,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     else
     {
         // The new controller will should be sized for the right
-        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionHiddenRight];
+        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
         
         [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
         self.rightNavigationBar.alpha = 0;
@@ -485,32 +531,32 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         // The old left controller shrinks to nothing
         if (pushingGeneralController)
         {
-            [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionHiddenLeft];
+            [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenLeft];
         }
         
         if (pushingFirstController)
         {
             // The new controller moves to the left
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
             
-            // The placeholder moves to the right
-            [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionRight];
+            // The left placeholder shrinks to the right
+            [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenRight];
         }
         else
         {
             if (pushingSecondController)
             {
-                // the placeholder shrinks to nothing
-                [self layoutController:self.placeholderController atPosition:SGBDrillDownControllerPositionHiddenMiddle];
+                // the placeholder shrinks to the left
+                [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenLeft];
             }
             else
             {
                 // The old right controller moves to the left
-                [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft];
+                [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
             }
             
             // The new controller moves to the right
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight];
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
         }
         
     } completion:^(BOOL finished) {
@@ -522,11 +568,17 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
         [viewController didMoveToParentViewController:self];
         
-        if (pushingSecondController)
+        if (pushingFirstController)
         {
-            // the second controller obscured the placeholder
-            [self.placeholderController viewDidDisappear:animated];
-            self.placeholderController.view.drillDownContainerView.hidden = YES;
+            // the second controller obscured the right placeholder
+            [self.leftPlaceholderController viewDidDisappear:animated];
+            self.leftPlaceholderController.view.drillDownContainerView.hidden = YES;
+        }
+        else if (pushingSecondController)
+        {
+            // the second controller obscured the right placeholder
+            [self.rightPlaceholderController viewDidDisappear:animated];
+            self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         else if (pushingGeneralController)
         {
@@ -562,11 +614,17 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     UIViewController *newLeftController = self.leftViewController;
     UIViewController *newRightController = self.rightViewController;
     
-    if (poppingSecondLastController)
+    if (poppingLastController)
+    {
+        // the left placeholder will be revealed
+        [self.leftPlaceholderController viewWillAppear:animated];
+        self.leftPlaceholderController.view.drillDownContainerView.hidden = NO;
+    }
+    else if (poppingSecondLastController)
     {
         // the placeholder will be revealed
-        [self.placeholderController viewWillAppear:animated];
-        self.placeholderController.view.drillDownContainerView.hidden = NO;
+        [self.rightPlaceholderController viewWillAppear:animated];
+        self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
     }
     else if (poppingGeneralController)
     {
@@ -628,32 +686,30 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
         if (poppingLastController)
         {
-            // The placeholder grows to fill the whole
-            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width, self.view.bounds.size.height - 44);
-            self.placeholderController.view.drillDownContainerView.frame = CGRectMake(0, 44, self.view.bounds.size.width, self.view.bounds.size.height - 44);
+            // The left placeholder grows to fill the left
+            [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
         }
         else if (poppingSecondLastController)
         {
-            // The placeholder grows to fill the right
-            self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-            self.placeholderController.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            // The right placeholder grows to fill the right
+            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
         }
         
         // The new left controller moves to the left
-        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft];
+        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
         
         // The new right controller moves to the right
-        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight];
+        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
         
         if (poppingLastController)
         {
-            // The popped controller shrinks to nothing
-            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionHiddenLeft];
+            // The popped controller moves off to the left
+            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
         }
         else
         {
-            // The popped controller moves off
-            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionHiddenRight];
+            // The popped controller moves off to the right
+            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
         }
         
     } completion:^(BOOL finished) {
@@ -668,10 +724,15 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         [poppedViewController.view removeFromSuperview];
         [poppedViewController didMoveToParentViewController:nil];
         
+        if (poppingLastController)
+        {
+            // the left placeholder was revealed
+            [self.leftPlaceholderController viewDidAppear:animated];
+        }
         if (poppingSecondLastController)
         {
             // the placeholder was revealed
-            [self.placeholderController viewDidAppear:animated];
+            [self.rightPlaceholderController viewDidAppear:animated];
         }
         else if (poppingGeneralController)
         {

@@ -29,7 +29,8 @@ extern NSString * const SGBDrillDownControllerException;
 @property (nonatomic, strong, readonly) NSArray *viewControllers;
 @property (nonatomic, strong, readonly) UIViewController *leftViewController;
 @property (nonatomic, strong, readonly) UIViewController *rightViewController;
-@property (nonatomic, strong) UIViewController *placeholderController;
+@property (nonatomic, strong) UIViewController *leftPlaceholderController;
+@property (nonatomic, strong) UIViewController *rightPlaceholderController;
 
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;

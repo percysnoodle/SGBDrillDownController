@@ -27,9 +27,13 @@
     self.window.rootViewController = self.drillDownController;
     [self.window makeKeyAndVisible];
     
-    SGBDemoController *placeholderController = [[SGBDemoController alloc] initWithNumber:0];
-    placeholderController.delegate = self;
-    self.drillDownController.placeholderController = placeholderController;
+    SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+    leftPlaceholderController.delegate = self;
+    self.drillDownController.leftPlaceholderController = leftPlaceholderController;
+    
+    SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+    rightPlaceholderController.delegate = self;
+    self.drillDownController.rightPlaceholderController = rightPlaceholderController;
     
     return YES;
 }
