@@ -11,6 +11,7 @@
 @property (nonatomic, strong) UILabel *appearanceCountLabel;
 @property (nonatomic, strong) UIButton *pushButton;
 @property (nonatomic, strong) UIButton *popButton;
+@property (nonatomic, strong) UIButton *popToRootButton;
 @property (nonatomic, strong) UIButton *navigationBarsButton;
 @property (nonatomic, strong) UIButton *toolbarsButton;
 
@@ -45,6 +46,12 @@
         [_popButton addTarget:self action:@selector(popButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_popButton];
         
+        _popToRootButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _popToRootButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        [_popToRootButton setTitle:@"Pop to root!" forState:UIControlStateNormal];
+        [_popToRootButton addTarget:self action:@selector(popToRootButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_popToRootButton];
+        
         _navigationBarsButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
         _navigationBarsButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         [_navigationBarsButton setTitle:@"Toggle navigation bars!" forState:UIControlStateNormal];
@@ -62,11 +69,12 @@
 
 - (void)layoutSubviews
 {
-    _appearanceCountLabel.frame = CGRectMake(20, 20, self.bounds.size.width - 40, 44);
-    _pushButton.frame = CGRectMake(20, 72, self.bounds.size.width - 40, 44);
-    _popButton.frame = CGRectMake(20, 124, self.bounds.size.width - 40, 44);
-    _navigationBarsButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
-    _toolbarsButton.frame = CGRectMake(20, 228, self.bounds.size.width - 40, 44);
+    self.appearanceCountLabel.frame = CGRectMake(20, 20, self.bounds.size.width - 40, 44);
+    self.pushButton.frame = CGRectMake(20, 72, self.bounds.size.width - 40, 44);
+    self.popButton.frame = CGRectMake(20, 124, self.bounds.size.width - 40, 44);
+    self.popToRootButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
+    self.navigationBarsButton.frame = CGRectMake(20, 228, self.bounds.size.width - 40, 44);
+    self.toolbarsButton.frame = CGRectMake(20, 280, self.bounds.size.width - 40, 44);
 }
 
 - (void)setWillAppearCount:(NSInteger)willAppearCount
@@ -94,6 +102,11 @@
 - (void)popButtonTapped:(id)sender
 {
     [self.delegate demoViewPopButtonTapped:self];
+}
+
+- (void)popToRootButtonTapped:(id)sender
+{
+    [self.delegate demoViewPopToRootButtonTapped:self];
 }
 
 - (void)navigationBarsButtonTapped:(id)sender

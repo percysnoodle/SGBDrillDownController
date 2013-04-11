@@ -53,6 +53,11 @@
     [self.drillDownController popViewControllerAnimated:YES completion:nil];
 }
 
+- (void)demoControllerDidRequestPopToRoot:(SGBDemoController *)demoController
+{
+    [self.drillDownController popToRootViewControllerAnimated:YES completion:nil];
+}
+
 - (void)demoControllerDidRequestToggleNavigationBars:(SGBDemoController *)demoController
 {
     [self.drillDownController setNavigationBarsHidden:!self.drillDownController.navigationBarsHidden animated:YES];

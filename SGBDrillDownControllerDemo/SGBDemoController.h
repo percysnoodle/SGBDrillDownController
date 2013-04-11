@@ -21,6 +21,7 @@
 
 - (void)demoControllerDidRequestPush:(SGBDemoController *)demoController;
 - (void)demoControllerDidRequestPop:(SGBDemoController *)demoController;
+- (void)demoControllerDidRequestPopToRoot:(SGBDemoController *)demoController;
 - (void)demoControllerDidRequestToggleNavigationBars:(SGBDemoController *)demoController;
 - (void)demoControllerDidRequestToggleToolbars:(SGBDemoController *)demoController;
 

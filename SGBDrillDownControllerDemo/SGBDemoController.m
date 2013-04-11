@@ -104,6 +104,11 @@
     [self requestPop];
 }
 
+- (void)demoViewPopToRootButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestPopToRoot];
+}
+
 - (void)demoViewNavigationBarsButtonTapped:(SGBDemoView *)demoView
 {
     [self requestToggleNavigationBars];
@@ -122,6 +127,11 @@
 - (void)requestPop
 {
     [self.delegate demoControllerDidRequestPop:self];
+}
+
+- (void)requestPopToRoot
+{
+    [self.delegate demoControllerDidRequestPopToRoot:self];
 }
 
 - (void)requestToggleNavigationBars

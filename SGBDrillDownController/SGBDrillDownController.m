@@ -714,11 +714,6 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
     } completion:^(BOOL finished) {
         
-        self.leftNavigationBar.alpha = 1;
-        self.rightNavigationBar.alpha = 1;
-        self.leftToolbar.alpha = 1;
-        self.rightToolbar.alpha = 1;
-        
         [poppedViewController removeFromParentViewController];
         [poppedViewController.view.drillDownContainerView removeFromSuperview];
         [poppedViewController.view removeFromSuperview];
@@ -745,6 +740,116 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     }];
     
     return poppedViewController;
+}
+
+- (void)popToViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
+{
+    if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot pop to a nil controller"];
+    if (![self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot pop to a controller that is not in the stack"];
+    
+    if ((viewController == self.leftViewController) || (viewController == self.rightViewController))
+    {
+        // Nothing to do
+        return;
+    }
+    
+    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
+    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    
+    // Work out what controllers to pop to
+    NSInteger indexOfViewController = [self.viewControllers indexOfObject:viewController];
+    NSInteger indexOfLeftViewController = [self.viewControllers indexOfObject:self.leftViewController];
+    
+    // Special case - one pop
+    if (indexOfViewController == indexOfLeftViewController - 1)
+    {
+        [self popViewControllerAnimated:animated completion:completion];
+        return;
+    }
+    
+    UIViewController *oldLeftController = self.leftViewController;
+    UIViewController *oldRightController = self.rightViewController;
+    
+    UIViewController *newLeftController = viewController;
+    UIViewController *newRightController = self.viewControllers[indexOfViewController + 1];
+    
+    self.viewControllers = [self.viewControllers subarrayWithRange:NSMakeRange(0, indexOfViewController + 2)];
+    
+    [newLeftController viewWillAppear:animated];
+    newLeftController.view.drillDownContainerView.hidden = NO;
+    
+    [newRightController viewWillAppear:animated];
+    newRightController.view.drillDownContainerView.hidden = NO;
+    
+    // Fix up the nav and toolbar
+    NSArray *newNavigationItems = [[self.viewControllers subarrayWithRange:NSMakeRange(0, indexOfViewController + 1)] valueForKey:@"navigationItem"];
+    
+    [self.leftNavigationBar setItems:newNavigationItems animated:animated];
+    self.leftNavigationBar.alpha = 0;
+    
+    self.leftToolbar.items = newLeftController.toolbarItems;
+    self.leftToolbar.alpha = 0;
+    
+    // insert a fake item so that the navigation bar does a pop animation
+    UINavigationItem *lastItem = [[UINavigationItem alloc] init];
+    lastItem.hidesBackButton = YES;
+    [self.rightNavigationBar setItems:@[ newRightController.navigationItem, lastItem ] animated:NO];
+    [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
+    self.rightNavigationBar.alpha = 0;
+    
+    self.rightToolbar.items = newRightController.toolbarItems;
+    self.rightToolbar.alpha = 0;
+    
+    // The old controllers are going away
+    [oldLeftController willMoveToParentViewController:nil];
+    [oldRightController willMoveToParentViewController:nil];
+    
+    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
+    [self animateWithDuration:animationDuration animations:^{
+        
+        self.leftNavigationBar.alpha = 1;
+        self.rightNavigationBar.alpha = 1;
+        self.leftToolbar.alpha = 1;
+        self.rightToolbar.alpha = 1;
+        
+        // The new left one moves to the left
+        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
+        
+        // The new right moves right
+        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
+        
+        // The old left moves off
+        [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+        
+        // The old right moves off
+        [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+        
+    } completion:^(BOOL finished) {
+        
+        [oldLeftController removeFromParentViewController];
+        [oldLeftController.view.drillDownContainerView removeFromSuperview];
+        [oldLeftController.view removeFromSuperview];
+        [oldLeftController didMoveToParentViewController:nil];
+        
+        [oldRightController removeFromParentViewController];
+        [oldRightController.view.drillDownContainerView removeFromSuperview];
+        [oldRightController.view removeFromSuperview];
+        [oldRightController didMoveToParentViewController:nil];
+        
+        [newLeftController viewDidAppear:animated];
+        [newRightController viewDidAppear:animated];
+        
+    }];
+}
+
+- (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
+{
+    if (self.viewControllers.count < 1) return;
+    
+    [self popToViewController:self.viewControllers[0] animated:animated completion:completion];
 }
 
 #pragma mark - Navigation bar delegate

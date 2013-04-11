@@ -20,6 +20,7 @@
 
 - (void)demoViewPushButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewPopButtonTapped:(SGBDemoView *)demoView;
+- (void)demoViewPopToRootButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewNavigationBarsButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewToolbarsButtonTapped:(SGBDemoView *)demoView;
 
