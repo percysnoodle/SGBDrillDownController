@@ -42,6 +42,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 @property (nonatomic, strong, readwrite) NSArray *viewControllers;
 
+@property (nonatomic, strong, readwrite) UIImageView *leftNavigationImageView;
 @property (nonatomic, strong, readwrite) UINavigationBar *leftNavigationBar;
 
 @property (nonatomic, strong, readwrite) UIImageView *rightNavigationImageView;
@@ -119,6 +120,9 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 {
     self.view = [[UIView alloc] init];
     
+    self.leftNavigationImageView = [[UIImageView alloc] init];
+    [self.view addSubview:self.leftNavigationImageView];
+    
     self.leftNavigationBar = [[self.navigationBarClass alloc] init];
     self.leftNavigationBar.delegate = self;
     [self.view addSubview:self.leftNavigationBar];
@@ -153,6 +157,23 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.rightNavigationBar = nil;
     
     [self removePlaceholderFromContainer];
+}
+
+#pragma mark - Rotation
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+{
+    return YES;
+}
+
+- (BOOL)shouldAutorotate
+{
+    return YES;
+}
+
+- (NSUInteger)supportedInterfaceOrientations
+{
+    return UIInterfaceOrientationMaskAll;
 }
 
 #pragma mark - Layout
@@ -257,7 +278,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 - (void)viewDidLayoutSubviews
 {
-    [self layoutNavigationBar:self.leftNavigationBar imageView:nil atPosition:SGBDrillDownNavigationBarPositionLeft];
+    [self layoutNavigationBar:self.leftNavigationBar imageView:self.leftNavigationImageView atPosition:SGBDrillDownNavigationBarPositionLeft];
     [self layoutNavigationBar:self.rightNavigationBar imageView:self.rightNavigationImageView atPosition:SGBDrillDownNavigationBarPositionRight];
     
     [self layoutToolbar:self.leftToolbar imageView:self.leftToolbarImageView atPosition:SGBDrillDownToolbarPositionLeft];
@@ -383,6 +404,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a controller that is already in the stack"];
  
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
     self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
     self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
@@ -427,6 +449,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         fakeItem.hidesBackButton = YES;
         [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
+        self.leftNavigationBar.alpha = 0;
         
         self.leftToolbar.items = viewController.toolbarItems;
         self.leftToolbar.alpha = 0;
@@ -454,6 +477,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
+        self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
         self.rightToolbar.alpha = 1;
@@ -491,6 +515,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
     } completion:^(BOOL finished) {
         
+        self.leftNavigationImageView.image = nil;
         self.rightNavigationImageView.image = nil;
         self.leftToolbarImageView.image = nil;
         self.rightToolbarImageView.image = nil;
@@ -518,6 +543,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (self.viewControllers.count < 1) return nil;
     
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
     self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
     self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
@@ -548,6 +574,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (poppingLastController)
     {
         [self.leftNavigationBar setItems:@[] animated:animated];
+        self.leftNavigationBar.alpha = 0;
         
         self.leftToolbar.items = @[];
         self.leftToolbar.alpha = 0;
@@ -569,6 +596,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         NSArray *newNavigationItems = (self.viewControllers.count > 0) ? [[self.viewControllers subarrayWithRange:NSMakeRange(0, self.viewControllers.count - 1)] valueForKey:@"navigationItem"] : @[];
         
         [self.leftNavigationBar setItems:newNavigationItems animated:animated];
+        self.leftNavigationBar.alpha = 0;
         
         self.leftToolbar.items = newLeftController.toolbarItems;
         self.leftToolbar.alpha = 0;
@@ -589,6 +617,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
+        self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
         self.rightToolbar.alpha = 1;
