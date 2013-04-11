@@ -87,8 +87,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _navigationBarsHidden = navigationBarsHidden;
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
+        [self performLayout];
         
     } completion:nil];
 }
@@ -103,8 +102,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _toolbarsHidden = toolbarsHidden;
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
+        [self performLayout];
         
     } completion:nil];
 }
@@ -298,7 +296,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 - (void)viewDidLayoutSubviews
 {
     if (self.suspendLayout) return;
-    
+    [self performLayout];
+}
+
+- (void)performLayout
+{
     [self layoutNavigationBar:self.leftNavigationBar imageView:self.leftNavigationImageView atPosition:SGBDrillDownControllerPositionLeft];
     [self layoutNavigationBar:self.rightNavigationBar imageView:self.rightNavigationImageView atPosition:SGBDrillDownControllerPositionRight];
     
@@ -389,9 +391,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         if (self.isViewLoaded)
         {
             [self addPlaceholderToContainer:leftPlaceholderController];
-            
-            [self.view setNeedsLayout];
-            [self.view layoutIfNeeded];
+            [self performLayout];
         }
     }
 }
@@ -407,9 +407,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         if (self.isViewLoaded)
         {
             [self addPlaceholderToContainer:rightPlaceholderController];
-            
-            [self.view setNeedsLayout];
-            [self.view layoutIfNeeded];
+            [self performLayout];
         }
     }
 }
