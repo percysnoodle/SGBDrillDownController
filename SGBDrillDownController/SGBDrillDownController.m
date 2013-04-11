@@ -265,13 +265,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
             break;
             
         case SGBDrillDownControllerPositionHiddenMiddle:
-            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
+            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
             controller.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth, top, 0, height);
             break;
             
         case SGBDrillDownControllerPositionHiddenRight:
-            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.drillDownContainerView.frame = CGRectMake(width, top, width - self.leftControllerWidth, height);
+            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
+            controller.view.drillDownContainerView.frame = CGRectMake(width, top, width - (self.leftControllerWidth + 1), height);
             break;
             
     }
@@ -526,11 +526,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         {
             // the second controller obscured the placeholder
             [self.placeholderController viewDidDisappear:animated];
+            self.placeholderController.view.drillDownContainerView.hidden = YES;
         }
         else if (pushingGeneralController)
         {
             // the old left controller was hidden
             [oldLeftController viewDidDisappear:animated];
+            oldLeftController.view.drillDownContainerView.hidden = YES;
         }
         
         if (completion) completion();
@@ -564,11 +566,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         // the placeholder will be revealed
         [self.placeholderController viewWillAppear:animated];
+        self.placeholderController.view.drillDownContainerView.hidden = NO;
     }
     else if (poppingGeneralController)
     {
         // the new left controller will be revealed
         [newLeftController viewWillAppear:animated];
+        newLeftController.view.drillDownContainerView.hidden = NO;
     }
     
     if (poppingLastController)

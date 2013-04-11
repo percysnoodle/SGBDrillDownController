@@ -16,6 +16,7 @@
     if (self)
     {
         self.clipsToBounds = NO;
+        self.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         
         _leftBorderView = [[UIView alloc] init];
         _leftBorderView.autoresizingMask = UIViewAutoresizingFlexibleHeight;

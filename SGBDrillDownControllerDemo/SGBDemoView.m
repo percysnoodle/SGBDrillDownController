@@ -26,6 +26,7 @@
         self.opaque = YES;
         
         _appearanceCountLabel = [[UILabel alloc] init];
+        _appearanceCountLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         _appearanceCountLabel.backgroundColor = [UIColor clearColor];
         _appearanceCountLabel.font = [UIFont boldSystemFontOfSize:[UIFont labelFontSize]];
         _appearanceCountLabel.textAlignment = NSTextAlignmentCenter;
