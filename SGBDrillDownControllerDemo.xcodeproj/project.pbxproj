@@ -19,6 +19,7 @@
 		D6D4A4D716D8F4B70091B8F7 /* SGBDrillDownController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4D616D8F4B70091B8F7 /* SGBDrillDownController.m */; };
 		D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */; };
 		D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */; };
+		F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,8 @@
 		D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoController.m; sourceTree = "<group>"; };
 		D6D4A4DD16D923EC0091B8F7 /* SGBDemoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDemoView.h; sourceTree = "<group>"; };
 		D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoView.m; sourceTree = "<group>"; };
+		F649F45D1716FD8B00B99C35 /* SGBDrillDownContainerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDrillDownContainerView.h; sourceTree = "<group>"; };
+		F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDrillDownContainerView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +121,8 @@
 			children = (
 				D6D4A4D516D8F4B70091B8F7 /* SGBDrillDownController.h */,
 				D6D4A4D616D8F4B70091B8F7 /* SGBDrillDownController.m */,
+				F649F45D1716FD8B00B99C35 /* SGBDrillDownContainerView.h */,
+				F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */,
 			);
 			path = SGBDrillDownController;
 			sourceTree = "<group>";
@@ -193,6 +198,7 @@
 				D6D4A4D716D8F4B70091B8F7 /* SGBDrillDownController.m in Sources */,
 				D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */,
 				D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */,
+				F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

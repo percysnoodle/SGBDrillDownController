@@ -11,6 +11,8 @@
 @interface SGBDemoView : UIView
 
 @property (nonatomic, weak) id<SGBDemoViewDelegate> delegate;
+@property (nonatomic, assign) NSInteger willAppearCount;
+@property (nonatomic, assign) NSInteger didAppearCount;
 
 @end
 

@@ -7,6 +7,7 @@
 //
 
 #import "SGBDrillDownController.h"
+#import "SGBDrillDownContainerView.h"
 #import <QuartzCore/QuartzCore.h>
 
 #define kAnimationDuration 0.33
@@ -245,32 +246,32 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         case SGBDrillDownControllerPositionFull:
             controller.view.frame = CGRectMake(0, 0, width, height);
-            controller.view.superview.frame = CGRectMake(0, top, width, height);
+            controller.view.drillDownContainerView.frame = CGRectMake(0, top, width, height);
             break;
             
         case SGBDrillDownControllerPositionLeft:
             controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(0, top, self.leftControllerWidth, height);
+            controller.view.drillDownContainerView.frame = CGRectMake(0, top, self.leftControllerWidth, height);
             break;
      
         case SGBDrillDownControllerPositionRight:
-            controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, top, width - self.leftControllerWidth, height);
+            controller.view.frame = CGRectMake(0, 0, width - (self.leftControllerWidth + 1), height);
+            controller.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth + 1, top, width - (self.leftControllerWidth + 1), height);
             break;
             
         case SGBDrillDownControllerPositionHiddenLeft:
             controller.view.frame = CGRectMake(0, 0, self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(0, top, 0, height);
+            controller.view.drillDownContainerView.frame = CGRectMake(0, top, 0, height);
             break;
             
         case SGBDrillDownControllerPositionHiddenMiddle:
             controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(self.leftControllerWidth, top, 0, height);
+            controller.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth, top, 0, height);
             break;
             
         case SGBDrillDownControllerPositionHiddenRight:
             controller.view.frame = CGRectMake(0, 0, width - self.leftControllerWidth, height);
-            controller.view.superview.frame = CGRectMake(width, top, width - self.leftControllerWidth, height);
+            controller.view.drillDownContainerView.frame = CGRectMake(width, top, width - self.leftControllerWidth, height);
             break;
             
     }
@@ -330,7 +331,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     if (self.placeholderController)
     {
         [self.placeholderController willMoveToParentViewController:nil];
-        [self.placeholderController.view.superview removeFromSuperview];
+        [self.placeholderController.view.drillDownContainerView removeFromSuperview];
         [self.placeholderController.view removeFromSuperview];
         [self.placeholderController removeFromParentViewController];
         [self.placeholderController didMoveToParentViewController:nil];
@@ -343,11 +344,10 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         [self.placeholderController willMoveToParentViewController:self];
         
-        UIView *containerView = [[UIView alloc] init];
-        containerView.clipsToBounds = YES;
+        SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
         [self.view insertSubview:containerView atIndex:0];
         
-        [containerView addSubview:self.placeholderController.view];
+        [containerView addViewToContentView:self.placeholderController.view];
         [self addChildViewController:self.placeholderController];
         [self.placeholderController didMoveToParentViewController:self];
     }
@@ -434,9 +434,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     [viewController willMoveToParentViewController:self];
     [self addChildViewController:viewController];
     
-    UIView *containerView = [[UIView alloc] init];
-    containerView.clipsToBounds = YES;
-    [containerView addSubview:viewController.view];
+    SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
+    [containerView addViewToContentView:viewController.view];
     [self.view addSubview:containerView];
     
     if (pushingFirstController)
@@ -627,13 +626,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         {
             // The placeholder grows to fill the whole
             self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width, self.view.bounds.size.height - 44);
-            self.placeholderController.view.superview.frame = CGRectMake(0, 44, self.view.bounds.size.width, self.view.bounds.size.height - 44);
+            self.placeholderController.view.drillDownContainerView.frame = CGRectMake(0, 44, self.view.bounds.size.width, self.view.bounds.size.height - 44);
         }
         else if (poppingSecondLastController)
         {
             // The placeholder grows to fill the right
             self.placeholderController.view.frame = CGRectMake(0, 0, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
-            self.placeholderController.view.superview.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
+            self.placeholderController.view.drillDownContainerView.frame = CGRectMake(self.leftControllerWidth, 44, self.view.bounds.size.width - self.leftControllerWidth, self.view.bounds.size.height - 44);
         }
         
         // The new left controller moves to the left
@@ -661,6 +660,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         self.rightToolbar.alpha = 1;
         
         [poppedViewController removeFromParentViewController];
+        [poppedViewController.view.drillDownContainerView removeFromSuperview];
         [poppedViewController.view removeFromSuperview];
         [poppedViewController didMoveToParentViewController:nil];
         

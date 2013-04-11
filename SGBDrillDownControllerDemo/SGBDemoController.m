@@ -11,6 +11,8 @@
 @interface SGBDemoController () <SGBDemoViewDelegate>
 
 @property (nonatomic, strong, readonly) SGBDemoView *demoView;
+@property (nonatomic, assign) NSInteger willAppearCount;
+@property (nonatomic, assign) NSInteger didAppearCount;
 
 @end
 
@@ -57,6 +59,34 @@
     
     self.view.backgroundColor = color;
     self.demoView.delegate = self;
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.willAppearCount++;
+    self.demoView.willAppearCount = self.willAppearCount;
+}
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    self.didAppearCount++;
+    self.demoView.didAppearCount = self.didAppearCount;
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.willAppearCount--;
+    self.demoView.willAppearCount = self.willAppearCount;
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+    self.didAppearCount--;
+    self.demoView.didAppearCount = self.didAppearCount;
 }
 
 - (SGBDemoView *)demoView

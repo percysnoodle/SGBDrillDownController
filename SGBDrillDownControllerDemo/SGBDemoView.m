@@ -8,6 +8,7 @@
 
 @interface SGBDemoView ()
 
+@property (nonatomic, strong) UILabel *appearanceCountLabel;
 @property (nonatomic, strong) UIButton *pushButton;
 @property (nonatomic, strong) UIButton *popButton;
 @property (nonatomic, strong) UIButton *navigationBarsButton;
@@ -23,6 +24,13 @@
     if (self)
     {
         self.opaque = YES;
+        
+        _appearanceCountLabel = [[UILabel alloc] init];
+        _appearanceCountLabel.backgroundColor = [UIColor clearColor];
+        _appearanceCountLabel.font = [UIFont boldSystemFontOfSize:[UIFont labelFontSize]];
+        _appearanceCountLabel.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:_appearanceCountLabel];
+        [self updateAppearanceCountLabel];
         
         _pushButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
         _pushButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
@@ -53,10 +61,28 @@
 
 - (void)layoutSubviews
 {
-    _pushButton.frame = CGRectMake(20, 20, self.bounds.size.width - 40, 44);
-    _popButton.frame = CGRectMake(20, 72, self.bounds.size.width - 40, 44);
-    _navigationBarsButton.frame = CGRectMake(20, 124, self.bounds.size.width - 40, 44);
-    _toolbarsButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
+    _appearanceCountLabel.frame = CGRectMake(20, 20, self.bounds.size.width - 40, 44);
+    _pushButton.frame = CGRectMake(20, 72, self.bounds.size.width - 40, 44);
+    _popButton.frame = CGRectMake(20, 124, self.bounds.size.width - 40, 44);
+    _navigationBarsButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
+    _toolbarsButton.frame = CGRectMake(20, 228, self.bounds.size.width - 40, 44);
+}
+
+- (void)setWillAppearCount:(NSInteger)willAppearCount
+{
+    _willAppearCount = willAppearCount;
+    [self updateAppearanceCountLabel];
+}
+
+- (void)setDidAppearCount:(NSInteger)didAppearCount
+{
+    _didAppearCount = didAppearCount;
+    [self updateAppearanceCountLabel];
+}
+
+- (void)updateAppearanceCountLabel
+{
+    self.appearanceCountLabel.text = [NSString stringWithFormat:@"Will appear: %d, Did appear: %d", self.willAppearCount, self.didAppearCount];
 }
 
 - (void)pushButtonTapped:(id)sender
