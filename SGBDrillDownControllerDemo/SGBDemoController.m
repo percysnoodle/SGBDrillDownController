@@ -119,29 +119,59 @@
     [self requestToggleToolbars];
 }
 
+- (void)demoViewReplaceButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestReplacement];
+}
+
+- (void)demoViewRemoveButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestRemoval];
+}
+
 - (void)requestPush
 {
-    [self.delegate demoControllerDidRequestPush:self];
+    SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
+    SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
+    [self.drillDownController pushViewController:nextController animated:YES completion:nil];
 }
 
 - (void)requestPop
 {
-    [self.delegate demoControllerDidRequestPop:self];
+    [self.drillDownController popViewControllerAnimated:YES completion:nil];
 }
 
 - (void)requestPopToRoot
 {
-    [self.delegate demoControllerDidRequestPopToRoot:self];
+    [self.drillDownController popToRootViewControllerAnimated:YES completion:nil];
 }
 
 - (void)requestToggleNavigationBars
 {
-    [self.delegate demoControllerDidRequestToggleNavigationBars:self];
+    [self.drillDownController setNavigationBarsHidden:!self.drillDownController.navigationBarsHidden animated:YES];
 }
 
 - (void)requestToggleToolbars
 {
-    [self.delegate demoControllerDidRequestToggleToolbars:self];
+    [self.drillDownController setToolbarsHidden:!self.drillDownController.toolbarsHidden animated:YES];
+}
+
+- (void)requestReplacement
+{
+    if (self.drillDownController.leftViewController)
+    {
+        SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
+        SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
+        [self.drillDownController replaceRightController:nextController animated:YES completion:nil];
+    }
+}
+
+- (void)requestRemoval
+{
+    if (self.drillDownController.leftViewController)
+    {
+        [self.drillDownController replaceRightController:nil animated:YES completion:nil];
+    }
 }
 
 @end

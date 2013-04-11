@@ -14,6 +14,8 @@
 @property (nonatomic, strong) UIButton *popToRootButton;
 @property (nonatomic, strong) UIButton *navigationBarsButton;
 @property (nonatomic, strong) UIButton *toolbarsButton;
+@property (nonatomic, strong) UIButton *replaceButton;
+@property (nonatomic, strong) UIButton *removeButton;
 
 @end
 
@@ -63,6 +65,18 @@
         [_toolbarsButton setTitle:@"Toggle toolbars!" forState:UIControlStateNormal];
         [_toolbarsButton addTarget:self action:@selector(toolbarsButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_toolbarsButton];
+        
+        _replaceButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _replaceButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        [_replaceButton setTitle:@"Replace!" forState:UIControlStateNormal];
+        [_replaceButton addTarget:self action:@selector(replaceButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_replaceButton];
+        
+        _removeButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _removeButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        [_removeButton setTitle:@"Remove!" forState:UIControlStateNormal];
+        [_removeButton addTarget:self action:@selector(removeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_removeButton];
     }
     return self;
 }
@@ -75,6 +89,8 @@
     self.popToRootButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
     self.navigationBarsButton.frame = CGRectMake(20, 228, self.bounds.size.width - 40, 44);
     self.toolbarsButton.frame = CGRectMake(20, 280, self.bounds.size.width - 40, 44);
+    self.replaceButton.frame = CGRectMake(20, 332, self.bounds.size.width - 40, 44);
+    self.removeButton.frame = CGRectMake(20, 384, self.bounds.size.width - 40, 44);
 }
 
 - (void)setWillAppearCount:(NSInteger)willAppearCount
@@ -117,6 +133,16 @@
 - (void)toolbarsButtonTapped:(id)sender
 {
     [self.delegate demoViewToolbarsButtonTapped:self];
+}
+
+- (void)replaceButtonTapped:(id)sender
+{
+    [self.delegate demoViewReplaceButtonTapped:self];
+}
+
+- (void)removeButtonTapped:(id)sender
+{
+    [self.delegate demoViewRemoveButtonTapped:self];
 }
 
 @end

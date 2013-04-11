@@ -32,10 +32,14 @@ extern NSString * const SGBDrillDownControllerException;
 @property (nonatomic, strong) UIViewController *leftPlaceholderController;
 @property (nonatomic, strong) UIViewController *rightPlaceholderController;
 
+// Navigation stack behaviour
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 - (void)popToViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
+
+// Split behaviour
+- (void)replaceRightController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 
 @property (nonatomic, assign) CGFloat leftControllerWidth;
 

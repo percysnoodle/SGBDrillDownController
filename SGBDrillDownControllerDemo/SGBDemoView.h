@@ -23,6 +23,8 @@
 - (void)demoViewPopToRootButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewNavigationBarsButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewToolbarsButtonTapped:(SGBDemoView *)demoView;
+- (void)demoViewReplaceButtonTapped:(SGBDemoView *)demoView;
+- (void)demoViewRemoveButtonTapped:(SGBDemoView *)demoView;
 
 @end
 

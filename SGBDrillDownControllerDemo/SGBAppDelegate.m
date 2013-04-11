@@ -10,7 +10,7 @@
 #import "SGBDrillDownController.h"
 #import "SGBDemoController.h"
 
-@interface SGBAppDelegate () <SGBDemoControllerDelegate>
+@interface SGBAppDelegate ()
 
 @property (nonatomic, strong) SGBDrillDownController *drillDownController;
 
@@ -28,44 +28,12 @@
     [self.window makeKeyAndVisible];
     
     SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-    leftPlaceholderController.delegate = self;
     self.drillDownController.leftPlaceholderController = leftPlaceholderController;
     
     SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-    rightPlaceholderController.delegate = self;
     self.drillDownController.rightPlaceholderController = rightPlaceholderController;
     
     return YES;
-}
-
-#pragma mark - Demo controller delegate
-
-- (void)demoControllerDidRequestPush:(SGBDemoController *)demoController
-{
-    SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
-    SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
-    nextController.delegate = self;
-    [self.drillDownController pushViewController:nextController animated:YES completion:nil];
-}
-
-- (void)demoControllerDidRequestPop:(SGBDemoController *)demoController
-{
-    [self.drillDownController popViewControllerAnimated:YES completion:nil];
-}
-
-- (void)demoControllerDidRequestPopToRoot:(SGBDemoController *)demoController
-{
-    [self.drillDownController popToRootViewControllerAnimated:YES completion:nil];
-}
-
-- (void)demoControllerDidRequestToggleNavigationBars:(SGBDemoController *)demoController
-{
-    [self.drillDownController setNavigationBarsHidden:!self.drillDownController.navigationBarsHidden animated:YES];
-}
-
-- (void)demoControllerDidRequestToggleToolbars:(SGBDemoController *)demoController
-{
-    [self.drillDownController setToolbarsHidden:!self.drillDownController.toolbarsHidden animated:YES];
 }
 
 @end
