@@ -14,10 +14,13 @@
 @property (nonatomic, assign) NSInteger willAppearCount;
 @property (nonatomic, assign) NSInteger didAppearCount;
 
+@property (nonatomic, assign) BOOL animationSwitchOn;
+
 @end
 
 @protocol SGBDemoViewDelegate <NSObject>
 
+- (void)demoViewAnimationSwitchChanged:(SGBDemoView *)demoView;
 - (void)demoViewPushButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewPushNilButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewPopButtonTapped:(SGBDemoView *)demoView;

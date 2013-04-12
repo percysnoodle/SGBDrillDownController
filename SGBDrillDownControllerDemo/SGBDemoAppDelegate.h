@@ -8,8 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
-@interface SGBAppDelegate : UIResponder <UIApplicationDelegate>
+@interface SGBDemoAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+- (void)resetWindow;
 
 @end

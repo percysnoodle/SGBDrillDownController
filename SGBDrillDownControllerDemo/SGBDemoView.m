@@ -9,6 +9,8 @@
 @interface SGBDemoView ()
 
 @property (nonatomic, strong) UILabel *appearanceCountLabel;
+@property (nonatomic, strong) UISwitch *animationSwitch;
+
 @property (nonatomic, strong) UIButton *pushButton;
 @property (nonatomic, strong) UIButton *pushNilButton;
 @property (nonatomic, strong) UIButton *popButton;
@@ -36,6 +38,11 @@
         _appearanceCountLabel.textAlignment = NSTextAlignmentCenter;
         [self addSubview:_appearanceCountLabel];
         [self updateAppearanceCountLabel];
+        
+        _animationSwitch = [[UISwitch alloc] init];
+        _animationSwitch.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+        [_animationSwitch addTarget:self action:@selector(animationSwitchChanged:) forControlEvents:UIControlEventValueChanged];
+        [self addSubview:_animationSwitch];
         
         _pushButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
         _pushButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
@@ -90,7 +97,9 @@
 
 - (void)layoutSubviews
 {
-    self.appearanceCountLabel.frame = CGRectMake(20, 20, self.bounds.size.width - 40, 44);
+    self.appearanceCountLabel.frame = CGRectMake(20, 20, self.bounds.size.width - 140, 44);
+    self.animationSwitch.frame = CGRectMake(self.bounds.size.width - 101, 28, 79, 27);
+    
     self.pushButton.frame = CGRectMake(20, 72, self.bounds.size.width - 40, 44);
     self.pushNilButton.frame = CGRectMake(20, 124, self.bounds.size.width - 40, 44);
     self.popButton.frame = CGRectMake(20, 176, self.bounds.size.width - 40, 44);
@@ -116,6 +125,21 @@
 - (void)updateAppearanceCountLabel
 {
     self.appearanceCountLabel.text = [NSString stringWithFormat:@"Will appear: %d, Did appear: %d", self.willAppearCount, self.didAppearCount];
+}
+
+- (BOOL)animationSwitchOn
+{
+    return self.animationSwitch.on;
+}
+
+- (void)setAnimationSwitchOn:(BOOL)animationSwitchOn
+{
+    self.animationSwitch.on = animationSwitchOn;
+}
+
+- (void)animationSwitchChanged:(id)sender
+{
+    [self.delegate demoViewAnimationSwitchChanged:self];
 }
 
 - (void)pushButtonTapped:(id)sender

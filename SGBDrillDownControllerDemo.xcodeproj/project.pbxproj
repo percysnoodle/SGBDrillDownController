@@ -7,12 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CBF91B21C1AE46D3AD2B94D8 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D9DA60BF03E46D3A23E9802 /* libPods.a */; };
 		D6D4A4B816D8F47D0091B8F7 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B716D8F47D0091B8F7 /* UIKit.framework */; };
 		D6D4A4BA16D8F47D0091B8F7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B916D8F47D0091B8F7 /* Foundation.framework */; };
 		D6D4A4BC16D8F47D0091B8F7 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4BB16D8F47D0091B8F7 /* CoreGraphics.framework */; };
 		D6D4A4C216D8F47D0091B8F7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4C016D8F47D0091B8F7 /* InfoPlist.strings */; };
 		D6D4A4C416D8F47D0091B8F7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C316D8F47D0091B8F7 /* main.m */; };
-		D6D4A4C816D8F47D0091B8F7 /* SGBAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C716D8F47D0091B8F7 /* SGBAppDelegate.m */; };
+		D6D4A4C816D8F47D0091B8F7 /* SGBDemoAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C716D8F47D0091B8F7 /* SGBDemoAppDelegate.m */; };
 		D6D4A4CA16D8F47D0091B8F7 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4C916D8F47D0091B8F7 /* Default.png */; };
 		D6D4A4CC16D8F47D0091B8F7 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4CB16D8F47D0091B8F7 /* Default@2x.png */; };
 		D6D4A4CE16D8F47D0091B8F7 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4CD16D8F47D0091B8F7 /* Default-568h@2x.png */; };
@@ -20,9 +21,27 @@
 		D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */; };
 		D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */; };
 		F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */; };
+		F649F4621717E31800B99C35 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C316D8F47D0091B8F7 /* main.m */; };
+		F649F4631717E31800B99C35 /* SGBDemoAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C716D8F47D0091B8F7 /* SGBDemoAppDelegate.m */; };
+		F649F4641717E31800B99C35 /* SGBDrillDownController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4D616D8F4B70091B8F7 /* SGBDrillDownController.m */; };
+		F649F4651717E31800B99C35 /* SGBDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */; };
+		F649F4661717E31800B99C35 /* SGBDemoView.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */; };
+		F649F4671717E31800B99C35 /* SGBDrillDownContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */; };
+		F649F4691717E31800B99C35 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B716D8F47D0091B8F7 /* UIKit.framework */; };
+		F649F46A1717E31800B99C35 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B916D8F47D0091B8F7 /* Foundation.framework */; };
+		F649F46B1717E31800B99C35 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4BB16D8F47D0091B8F7 /* CoreGraphics.framework */; };
+		F649F46D1717E31800B99C35 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4C016D8F47D0091B8F7 /* InfoPlist.strings */; };
+		F649F46E1717E31800B99C35 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4C916D8F47D0091B8F7 /* Default.png */; };
+		F649F46F1717E31800B99C35 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4CB16D8F47D0091B8F7 /* Default@2x.png */; };
+		F649F4701717E31800B99C35 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D6D4A4CD16D8F47D0091B8F7 /* Default-568h@2x.png */; };
+		F6AF05221717E57600D868E8 /* SGBDemoTestController.m in Sources */ = {isa = PBXBuildFile; fileRef = F6AF05211717E57600D868E8 /* SGBDemoTestController.m */; };
+		F6AF05251717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m in Sources */ = {isa = PBXBuildFile; fileRef = F6AF05241717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m */; };
+		F6AF05281717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m in Sources */ = {isa = PBXBuildFile; fileRef = F6AF05271717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1D9DA60BF03E46D3A23E9802 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8992C30DA0B24D358CCD67BA /* Pods.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.xcconfig; path = Pods/Pods.xcconfig; sourceTree = SOURCE_ROOT; };
 		D6D4A4B416D8F47D0091B8F7 /* SGBDrillDownControllerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SGBDrillDownControllerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D6D4A4B716D8F47D0091B8F7 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		D6D4A4B916D8F47D0091B8F7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -31,8 +50,8 @@
 		D6D4A4C116D8F47D0091B8F7 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D6D4A4C316D8F47D0091B8F7 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D6D4A4C516D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SGBDrillDownControllerDemo-Prefix.pch"; sourceTree = "<group>"; };
-		D6D4A4C616D8F47D0091B8F7 /* SGBAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SGBAppDelegate.h; sourceTree = "<group>"; };
-		D6D4A4C716D8F47D0091B8F7 /* SGBAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SGBAppDelegate.m; sourceTree = "<group>"; };
+		D6D4A4C616D8F47D0091B8F7 /* SGBDemoAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SGBDemoAppDelegate.h; sourceTree = "<group>"; };
+		D6D4A4C716D8F47D0091B8F7 /* SGBDemoAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SGBDemoAppDelegate.m; sourceTree = "<group>"; };
 		D6D4A4C916D8F47D0091B8F7 /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Default.png; sourceTree = "<group>"; };
 		D6D4A4CB16D8F47D0091B8F7 /* Default@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default@2x.png"; sourceTree = "<group>"; };
 		D6D4A4CD16D8F47D0091B8F7 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
@@ -42,8 +61,16 @@
 		D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoController.m; sourceTree = "<group>"; };
 		D6D4A4DD16D923EC0091B8F7 /* SGBDemoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDemoView.h; sourceTree = "<group>"; };
 		D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoView.m; sourceTree = "<group>"; };
+		F628B3BD1717E3A3005D248C /* Funcional Tests.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Funcional Tests.plist"; sourceTree = "<group>"; };
 		F649F45D1716FD8B00B99C35 /* SGBDrillDownContainerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDrillDownContainerView.h; sourceTree = "<group>"; };
 		F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDrillDownContainerView.m; sourceTree = "<group>"; };
+		F649F4741717E31800B99C35 /* SGBDrillDownController Tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SGBDrillDownController Tests.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6AF05201717E57600D868E8 /* SGBDemoTestController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDemoTestController.h; sourceTree = "<group>"; };
+		F6AF05211717E57600D868E8 /* SGBDemoTestController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoTestController.m; sourceTree = "<group>"; };
+		F6AF05231717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KIFTestScenario+SGBDrillDownController.h"; sourceTree = "<group>"; };
+		F6AF05241717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KIFTestScenario+SGBDrillDownController.m"; sourceTree = "<group>"; };
+		F6AF05261717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KIFTestStep+SGBDrillDownController.h"; sourceTree = "<group>"; };
+		F6AF05271717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KIFTestStep+SGBDrillDownController.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +84,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F649F4681717E31800B99C35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F649F4691717E31800B99C35 /* UIKit.framework in Frameworks */,
+				F649F46A1717E31800B99C35 /* Foundation.framework in Frameworks */,
+				F649F46B1717E31800B99C35 /* CoreGraphics.framework in Frameworks */,
+				CBF91B21C1AE46D3AD2B94D8 /* libPods.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -67,6 +105,7 @@
 				D6D4A4BD16D8F47D0091B8F7 /* SGBDrillDownControllerDemo */,
 				D6D4A4B616D8F47D0091B8F7 /* Frameworks */,
 				D6D4A4B516D8F47D0091B8F7 /* Products */,
+				8992C30DA0B24D358CCD67BA /* Pods.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,6 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				D6D4A4B416D8F47D0091B8F7 /* SGBDrillDownControllerDemo.app */,
+				F649F4741717E31800B99C35 /* SGBDrillDownController Tests.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -84,6 +124,7 @@
 				D6D4A4B716D8F47D0091B8F7 /* UIKit.framework */,
 				D6D4A4B916D8F47D0091B8F7 /* Foundation.framework */,
 				D6D4A4BB16D8F47D0091B8F7 /* CoreGraphics.framework */,
+				1D9DA60BF03E46D3A23E9802 /* libPods.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -91,13 +132,14 @@
 		D6D4A4BD16D8F47D0091B8F7 /* SGBDrillDownControllerDemo */ = {
 			isa = PBXGroup;
 			children = (
-				D6D4A4C616D8F47D0091B8F7 /* SGBAppDelegate.h */,
-				D6D4A4C716D8F47D0091B8F7 /* SGBAppDelegate.m */,
+				D6D4A4C616D8F47D0091B8F7 /* SGBDemoAppDelegate.h */,
+				D6D4A4C716D8F47D0091B8F7 /* SGBDemoAppDelegate.m */,
 				D6D4A4DB16D923EC0091B8F7 /* SGBDemoController.h */,
 				D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */,
 				D6D4A4DD16D923EC0091B8F7 /* SGBDemoView.h */,
 				D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */,
 				D6D4A4BE16D8F47D0091B8F7 /* Supporting Files */,
+				F6AF051F1717E52D00D868E8 /* Tests */,
 			);
 			path = SGBDrillDownControllerDemo;
 			sourceTree = "<group>";
@@ -105,6 +147,7 @@
 		D6D4A4BE16D8F47D0091B8F7 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				F628B3BD1717E3A3005D248C /* Funcional Tests.plist */,
 				D6D4A4BF16D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Info.plist */,
 				D6D4A4C016D8F47D0091B8F7 /* InfoPlist.strings */,
 				D6D4A4C316D8F47D0091B8F7 /* main.m */,
@@ -127,6 +170,19 @@
 			path = SGBDrillDownController;
 			sourceTree = "<group>";
 		};
+		F6AF051F1717E52D00D868E8 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				F6AF05201717E57600D868E8 /* SGBDemoTestController.h */,
+				F6AF05211717E57600D868E8 /* SGBDemoTestController.m */,
+				F6AF05231717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.h */,
+				F6AF05241717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m */,
+				F6AF05261717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.h */,
+				F6AF05271717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -145,6 +201,24 @@
 			name = SGBDrillDownControllerDemo;
 			productName = SGBDrillDownControllerDemo;
 			productReference = D6D4A4B416D8F47D0091B8F7 /* SGBDrillDownControllerDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F649F4601717E31800B99C35 /* Functional Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F649F4711717E31800B99C35 /* Build configuration list for PBXNativeTarget "Functional Tests" */;
+			buildPhases = (
+				F649F4611717E31800B99C35 /* Sources */,
+				F649F4681717E31800B99C35 /* Frameworks */,
+				F649F46C1717E31800B99C35 /* Resources */,
+				E00D68A8A758499BB901714C /* Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Functional Tests";
+			productName = SGBDrillDownControllerDemo;
+			productReference = F649F4741717E31800B99C35 /* SGBDrillDownController Tests.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -170,6 +244,7 @@
 			projectRoot = "";
 			targets = (
 				D6D4A4B316D8F47D0091B8F7 /* SGBDrillDownControllerDemo */,
+				F649F4601717E31800B99C35 /* Functional Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -186,7 +261,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F649F46C1717E31800B99C35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F649F46D1717E31800B99C35 /* InfoPlist.strings in Resources */,
+				F649F46E1717E31800B99C35 /* Default.png in Resources */,
+				F649F46F1717E31800B99C35 /* Default@2x.png in Resources */,
+				F649F4701717E31800B99C35 /* Default-568h@2x.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E00D68A8A758499BB901714C /* Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Pods-resources.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D6D4A4B016D8F47D0091B8F7 /* Sources */ = {
@@ -194,11 +297,27 @@
 			buildActionMask = 2147483647;
 			files = (
 				D6D4A4C416D8F47D0091B8F7 /* main.m in Sources */,
-				D6D4A4C816D8F47D0091B8F7 /* SGBAppDelegate.m in Sources */,
+				D6D4A4C816D8F47D0091B8F7 /* SGBDemoAppDelegate.m in Sources */,
 				D6D4A4D716D8F4B70091B8F7 /* SGBDrillDownController.m in Sources */,
 				D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */,
 				D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */,
 				F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F649F4611717E31800B99C35 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F649F4621717E31800B99C35 /* main.m in Sources */,
+				F649F4631717E31800B99C35 /* SGBDemoAppDelegate.m in Sources */,
+				F649F4641717E31800B99C35 /* SGBDrillDownController.m in Sources */,
+				F649F4651717E31800B99C35 /* SGBDemoController.m in Sources */,
+				F649F4661717E31800B99C35 /* SGBDemoView.m in Sources */,
+				F649F4671717E31800B99C35 /* SGBDrillDownContainerView.m in Sources */,
+				F6AF05221717E57600D868E8 /* SGBDemoTestController.m in Sources */,
+				F6AF05251717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m in Sources */,
+				F6AF05281717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,6 +417,32 @@
 			};
 			name = Release;
 		};
+		F649F4721717E31800B99C35 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8992C30DA0B24D358CCD67BA /* Pods.xcconfig */;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SGBDrillDownControllerDemo/SGBDrillDownControllerDemo-Prefix.pch";
+				INFOPLIST_FILE = "$(SRCROOT)/SGBDrillDownControllerDemo/Funcional Tests.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				PRODUCT_NAME = "SGBDrillDownController Tests";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		F649F4731717E31800B99C35 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8992C30DA0B24D358CCD67BA /* Pods.xcconfig */;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SGBDrillDownControllerDemo/SGBDrillDownControllerDemo-Prefix.pch";
+				INFOPLIST_FILE = "$(SRCROOT)/SGBDrillDownControllerDemo/Funcional Tests.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				PRODUCT_NAME = "SGBDrillDownController Tests";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -315,6 +460,15 @@
 			buildConfigurations = (
 				D6D4A4D216D8F47D0091B8F7 /* Debug */,
 				D6D4A4D316D8F47D0091B8F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F649F4711717E31800B99C35 /* Build configuration list for PBXNativeTarget "Functional Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F649F4721717E31800B99C35 /* Debug */,
+				F649F4731717E31800B99C35 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

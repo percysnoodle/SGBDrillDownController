@@ -6,19 +6,36 @@
 //  Copyright (c) 2013 Simon Booth. All rights reserved.
 //
 
-#import "SGBAppDelegate.h"
+#import "SGBDemoAppDelegate.h"
 #import "SGBDrillDownController.h"
 #import "SGBDemoController.h"
 
-@interface SGBAppDelegate ()
+#ifdef RUN_KIF_TESTS
+#import "SGBDemoTestController.h"
+#endif
+
+@interface SGBDemoAppDelegate ()
 
 @property (nonatomic, strong) SGBDrillDownController *drillDownController;
 
 @end
 
-@implementation SGBAppDelegate
+@implementation SGBDemoAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+    [self resetWindow];
+    
+#ifdef RUN_KIF_TESTS
+    [[SGBDemoTestController sharedInstance] startTestingWithCompletionBlock:^{
+        exit([[SGBDemoTestController sharedInstance] failureCount]);
+    }];
+#endif
+    
+    return YES;
+}
+
+- (void)resetWindow
 {
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     self.window.backgroundColor = [UIColor scrollViewTexturedBackgroundColor];
@@ -32,8 +49,6 @@
     
     SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
     self.drillDownController.rightPlaceholderController = rightPlaceholderController;
-    
-    return YES;
 }
 
 @end

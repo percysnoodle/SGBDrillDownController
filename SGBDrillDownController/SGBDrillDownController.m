@@ -92,7 +92,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         self.rightNavigationImageView.hidden = NO;
     }
     
-    [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
+    NSTimeInterval duration = animated ? UINavigationControllerHideShowBarDuration : 0;
+    [self animateWithDuration:duration animations:^{
         
         _navigationBarsHidden = navigationBarsHidden;
         [self performLayout];
@@ -125,7 +126,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         self.rightToolbarImageView.hidden = NO;
     }
     
-    [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
+    NSTimeInterval duration = animated ? UINavigationControllerHideShowBarDuration : 0;
+    [self animateWithDuration:duration animations:^{
         
         _toolbarsHidden = toolbarsHidden;
         [self performLayout];
