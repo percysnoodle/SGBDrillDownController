@@ -207,6 +207,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     [self removePlaceholderFromContainer:self.rightPlaceholderController];
 }
 
+- (void)viewWillAppear:(BOOL)animated
+{
+    // Perform the layout before calling super, so that children can get correct sizes in their viewWillAppear.
+    [self performLayout];
+    [super viewWillAppear:animated];
+}
+
 #pragma mark - Rotation
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
@@ -1125,7 +1132,14 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     {
         [self popToViewController:leftViewController animated:animated completion:^{
             
-            [self replaceRightViewController:rightViewController animated:animated completion:completion];
+            if (self.rightViewController)
+            {
+                [self replaceRightViewController:rightViewController animated:animated completion:completion];
+            }
+            else
+            {
+                [self pushViewController:rightViewController animated:animated completion:completion];
+            }
             
         }];
     }
