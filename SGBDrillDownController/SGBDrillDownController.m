@@ -84,12 +84,30 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 - (void)setNavigationBarsHidden:(BOOL)navigationBarsHidden animated:(BOOL)animated
 {
+    if (!navigationBarsHidden)
+    {
+        self.leftNavigationBar.hidden = NO;
+        self.leftNavigationImageView.hidden = NO;
+        self.rightNavigationBar.hidden = NO;
+        self.rightNavigationImageView.hidden = NO;
+    }
+    
     [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _navigationBarsHidden = navigationBarsHidden;
         [self performLayout];
         
-    } completion:nil];
+    } completion:^(BOOL finished) {
+       
+        if (navigationBarsHidden)
+        {
+            self.leftNavigationBar.hidden = YES;
+            self.leftNavigationImageView.hidden = YES;
+            self.rightNavigationBar.hidden = YES;
+            self.rightNavigationImageView.hidden = YES;
+        }
+        
+    }];
 }
 
 - (void)setToolbarsHidden:(BOOL)toolbarsHidden
@@ -99,12 +117,30 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 - (void)setToolbarsHidden:(BOOL)toolbarsHidden animated:(BOOL)animated
 {
+    if (!toolbarsHidden)
+    {
+        self.leftToolbar.hidden = NO;
+        self.leftToolbarImageView.hidden = NO;
+        self.rightToolbar.hidden = NO;
+        self.rightToolbarImageView.hidden = NO;
+    }
+    
     [self animateWithDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _toolbarsHidden = toolbarsHidden;
         [self performLayout];
         
-    } completion:nil];
+    } completion:^(BOOL finished) {
+       
+        if (toolbarsHidden)
+        {
+            self.leftToolbar.hidden = YES;
+            self.leftToolbarImageView.hidden = YES;
+            self.rightToolbar.hidden = YES;
+            self.rightToolbarImageView.hidden = YES;
+        }
+        
+    }];
 }
 
 #pragma mark - View loading / unloading
@@ -114,29 +150,37 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.view = [[UIView alloc] init];
     
     self.leftNavigationImageView = [[UIImageView alloc] init];
+    self.leftNavigationImageView.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.leftNavigationImageView];
     
     self.leftNavigationBar = [[self.navigationBarClass alloc] init];
     self.leftNavigationBar.delegate = self;
+    self.leftNavigationBar.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.leftNavigationBar];
     
     self.rightNavigationImageView = [[UIImageView alloc] init];
+    self.rightNavigationImageView.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.rightNavigationImageView];
     
     self.rightNavigationBar = [[self.navigationBarClass alloc] init];
     self.rightNavigationBar.delegate = self;
+    self.rightNavigationBar.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.rightNavigationBar];
     
     self.leftToolbarImageView = [[UIImageView alloc] init];
+    self.leftToolbarImageView.hidden = self.toolbarsHidden;
     [self.view addSubview:self.leftToolbarImageView];
     
     self.leftToolbar = [[self.toolbarClass alloc] init];
+    self.leftToolbar.hidden = self.toolbarsHidden;
     [self.view addSubview:self.leftToolbar];
     
     self.rightToolbarImageView = [[UIImageView alloc] init];
+    self.rightToolbarImageView.hidden = self.toolbarsHidden;
     [self.view addSubview:self.rightToolbarImageView];
     
     self.rightToolbar = [[self.toolbarClass alloc] init];
+    self.rightToolbar.hidden = self.toolbarsHidden;
     [self.view addSubview:self.rightToolbar];
     
     if (self.leftPlaceholderController)
