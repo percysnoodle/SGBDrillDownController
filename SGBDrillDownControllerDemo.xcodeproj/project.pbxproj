@@ -71,6 +71,10 @@
 		F6AF05241717E91700D868E8 /* KIFTestScenario+SGBDrillDownController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KIFTestScenario+SGBDrillDownController.m"; sourceTree = "<group>"; };
 		F6AF05261717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KIFTestStep+SGBDrillDownController.h"; sourceTree = "<group>"; };
 		F6AF05271717E9A300D868E8 /* KIFTestStep+SGBDrillDownController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KIFTestStep+SGBDrillDownController.m"; sourceTree = "<group>"; };
+		F6FA18581717F5E200C894FB /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
+		F6FA18591717F5E200C894FB /* Podfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Podfile; sourceTree = SOURCE_ROOT; };
+		F6FA185A1717F5E200C894FB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
+		F6FA185B1717F5E200C894FB /* SGBDrillDownController.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = SGBDrillDownController.podspec; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,14 +151,18 @@
 		D6D4A4BE16D8F47D0091B8F7 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				F628B3BD1717E3A3005D248C /* Funcional Tests.plist */,
-				D6D4A4BF16D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Info.plist */,
-				D6D4A4C016D8F47D0091B8F7 /* InfoPlist.strings */,
-				D6D4A4C316D8F47D0091B8F7 /* main.m */,
-				D6D4A4C516D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Prefix.pch */,
+				F6FA18581717F5E200C894FB /* LICENSE */,
+				F6FA18591717F5E200C894FB /* Podfile */,
+				F6FA185A1717F5E200C894FB /* README.md */,
+				F6FA185B1717F5E200C894FB /* SGBDrillDownController.podspec */,
+				D6D4A4CD16D8F47D0091B8F7 /* Default-568h@2x.png */,
 				D6D4A4C916D8F47D0091B8F7 /* Default.png */,
 				D6D4A4CB16D8F47D0091B8F7 /* Default@2x.png */,
-				D6D4A4CD16D8F47D0091B8F7 /* Default-568h@2x.png */,
+				F628B3BD1717E3A3005D248C /* Funcional Tests.plist */,
+				D6D4A4C016D8F47D0091B8F7 /* InfoPlist.strings */,
+				D6D4A4C316D8F47D0091B8F7 /* main.m */,
+				D6D4A4BF16D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Info.plist */,
+				D6D4A4C516D8F47D0091B8F7 /* SGBDrillDownControllerDemo-Prefix.pch */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
