@@ -77,6 +77,18 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     return self;
 }
 
+- (UITabBarItem *)tabBarItem
+{
+    return self.leftViewController.tabBarItem;
+}
+
+- (UINavigationItem *)navigationItem
+{
+    return self.leftViewController.navigationItem;
+}
+
+#pragma mark - Navigation and toolbars
+
 - (void)setNavigationBarsHidden:(BOOL)navigationBarsHidden
 {
     [self setNavigationBarsHidden:navigationBarsHidden animated:NO];
