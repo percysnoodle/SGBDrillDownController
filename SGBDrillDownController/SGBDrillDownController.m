@@ -72,7 +72,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
         _leftControllerWidth = 320;
-        _leftViewControllers = [NSMutableArray array];
+        _leftViewControllers = [[NSMutableArray alloc] init];
     }
     return self;
 }
