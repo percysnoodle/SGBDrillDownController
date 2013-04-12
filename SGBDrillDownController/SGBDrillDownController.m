@@ -474,7 +474,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
 
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
-    if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a nil controller"];
+    if (!viewController && !self.rightViewController) return;
+        
     if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a controller that is already in the stack"];
  
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
@@ -513,12 +514,20 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         [oldLeftController viewWillDisappear:animated];
     }
     
-    [viewController willMoveToParentViewController:self];
-    [self addChildViewController:viewController];
-    
-    SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
-    [containerView addViewToContentView:viewController.view];
-    [self.view addSubview:containerView];
+    if (viewController)
+    {
+        [viewController willMoveToParentViewController:self];
+        [self addChildViewController:viewController];
+        
+        SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
+        [containerView addViewToContentView:viewController.view];
+        [self.view addSubview:containerView];
+    }
+    else
+    {
+        [self.rightPlaceholderController viewWillAppear:animated];
+        self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
+    }
     
     if (pushingLeftController)
     {
@@ -537,10 +546,17 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     }
     else
     {
-        // The new controller will should be sized for the right
-        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+        if (viewController)
+        {
+            // The new controller will should be sized for the right
+            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+        }
+        else
+        {
+            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenRight];
+        }
         
-        [self.rightNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
+        [self.rightNavigationBar setItems:[NSArray arrayWithObjects:viewController.navigationItem, nil] animated:animated];
         self.rightNavigationBar.alpha = 0;
         
         self.rightToolbar.items = viewController.toolbarItems;
@@ -588,8 +604,15 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
                 [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
             }
             
-            // The new controller moves to the right
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
+            if (viewController)
+            {
+                // The new controller moves to the right
+                [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
+            }
+            else
+            {
+                [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
+            }
         }
         
     } completion:^(BOOL finished) {
@@ -599,7 +622,14 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         self.leftToolbarImageView.image = nil;
         self.rightToolbarImageView.image = nil;
         
-        [viewController didMoveToParentViewController:self];
+        if (viewController)
+        {
+            [viewController didMoveToParentViewController:self];
+        }
+        else
+        {
+            [self.rightPlaceholderController viewDidAppear:animated];
+        }
         
         if (pushingLeftController)
         {
@@ -820,11 +850,11 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
     
     // Work out what controllers to pop to
-    NSInteger indexOfViewController = [self.viewControllers indexOfObject:viewController];
-    NSInteger indexOfLeftViewController = [self.viewControllers indexOfObject:self.leftViewController];
+    NSInteger indexOfOldLeftViewController = [self.viewControllers indexOfObject:self.leftViewController];
+    NSInteger indexOfNewLeftViewController = [self.viewControllers indexOfObject:viewController];
     
     // Special case - one pop
-    if (indexOfViewController == indexOfLeftViewController - 1)
+    if (indexOfNewLeftViewController == indexOfOldLeftViewController - 1)
     {
         [self popViewControllerAnimated:animated completion:completion];
         return;
@@ -834,9 +864,12 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     UIViewController *oldRightController = self.rightViewController;
     
     UIViewController *newLeftController = viewController;
-    UIViewController *newRightController = self.viewControllers[indexOfViewController + 1];
+    UIViewController *newRightController = self.viewControllers[indexOfNewLeftViewController + 1];
     
-    NSArray *newLeftViewControllers = [self.leftViewControllers subarrayWithRange:NSMakeRange(0, indexOfViewController + 1)];
+    NSArray *newLeftViewControllers = [self.leftViewControllers subarrayWithRange:NSMakeRange(0, indexOfNewLeftViewController + 1)];
+    // The old left controllers are leaving, except for the new right one, hence +2 not +1
+    NSArray * oldLeftViewControllers = [self.leftViewControllers subarrayWithRange:NSMakeRange(indexOfNewLeftViewController + 2, self.leftViewControllers.count - (indexOfNewLeftViewController + 2))];
+    
     [self.leftViewControllers removeAllObjects];
     [self.leftViewControllers addObjectsFromArray:newLeftViewControllers];
     self.rightViewController = newRightController;
@@ -908,10 +941,13 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
     } completion:^(BOOL finished) {
         
-        [oldLeftController removeFromParentViewController];
-        [oldLeftController.view.drillDownContainerView removeFromSuperview];
-        [oldLeftController.view removeFromSuperview];
-        [oldLeftController didMoveToParentViewController:nil];
+        for (UIViewController *oldViewController in oldLeftViewControllers)
+        {
+            [oldViewController removeFromParentViewController];
+            [oldViewController.view.drillDownContainerView removeFromSuperview];
+            [oldViewController.view removeFromSuperview];
+            [oldViewController didMoveToParentViewController:nil];
+        }
         
         if (oldRightController)
         {
@@ -939,7 +975,7 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
     [self popToViewController:self.viewControllers[0] animated:animated completion:completion];
 }
 
-- (void)replaceRightController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
     if (!self.leftViewController) [NSException raise:SGBDrillDownControllerException format:@"Cannot replace right controller without a left controller"];
     
@@ -1028,6 +1064,25 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         }
                 
     }];
+}
+
+- (void)showRightViewController:(UIViewController *)rightViewController
+          forLeftViewController:(UIViewController *)leftViewController
+                       animated:(BOOL)animated
+                     completion:(void (^)(void))completion
+{
+    if (leftViewController == self.rightViewController)
+    {
+        [self pushViewController:rightViewController animated:animated completion:completion];
+    }
+    else
+    {
+        [self popToViewController:leftViewController animated:animated completion:^{
+            
+            [self replaceRightViewController:rightViewController animated:animated completion:completion];
+            
+        }];
+    }
 }
 
 #pragma mark - Navigation bar delegate

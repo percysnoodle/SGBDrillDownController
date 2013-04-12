@@ -26,20 +26,22 @@ extern NSString * const SGBDrillDownControllerException;
 @property (nonatomic, assign) BOOL toolbarsHidden;
 - (void)setToolbarsHidden:(BOOL)toolbarsHidden animated:(BOOL)animated;
 
+// Navigation stack behaviour
 @property (nonatomic, strong, readonly) NSArray *viewControllers;
 @property (nonatomic, strong, readonly) UIViewController *leftViewController;
 @property (nonatomic, strong, readonly) UIViewController *rightViewController;
 @property (nonatomic, strong) UIViewController *leftPlaceholderController;
 @property (nonatomic, strong) UIViewController *rightPlaceholderController;
 
-// Navigation stack behaviour
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 - (void)popToViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 - (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 
 // Split behaviour
-- (void)replaceRightController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
+
+- (void)showRightViewController:(UIViewController *)rightViewController forLeftViewController:(UIViewController *)leftViewController animated:(BOOL)animated completion:(void(^)(void))completion;
 
 @property (nonatomic, assign) CGFloat leftControllerWidth;
 

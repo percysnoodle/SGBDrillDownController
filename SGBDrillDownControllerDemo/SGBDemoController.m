@@ -99,6 +99,11 @@
     [self requestPush];
 }
 
+- (void)demoViewPushNilButtonTapped:(SGBDemoView *)demoView
+{
+    [self requestPushNil];
+}
+
 - (void)demoViewPopButtonTapped:(SGBDemoView *)demoView
 {
     [self requestPop];
@@ -136,6 +141,11 @@
     [self.drillDownController pushViewController:nextController animated:YES completion:nil];
 }
 
+- (void)requestPushNil
+{
+    [self.drillDownController pushViewController:nil animated:YES completion:nil];
+}
+
 - (void)requestPop
 {
     [self.drillDownController popViewControllerAnimated:YES completion:nil];
@@ -162,7 +172,7 @@
     {
         SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
         SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
-        [self.drillDownController replaceRightController:nextController animated:YES completion:nil];
+        [self.drillDownController replaceRightViewController:nextController animated:YES completion:nil];
     }
 }
 
@@ -170,7 +180,7 @@
 {
     if (self.drillDownController.leftViewController)
     {
-        [self.drillDownController replaceRightController:nil animated:YES completion:nil];
+        [self.drillDownController replaceRightViewController:nil animated:YES completion:nil];
     }
 }
 
