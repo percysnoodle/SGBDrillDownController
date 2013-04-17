@@ -9,6 +9,9 @@
 #import <UIKit/UIKit.h>
 
 extern NSString * const SGBDrillDownControllerException;
+extern NSString * const SGBDrillDownControllerDidPushNotification;
+extern NSString * const SGBDrillDownControllerDidPopNotification;
+extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
 @interface SGBDrillDownController : UIViewController
 

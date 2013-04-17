@@ -29,6 +29,9 @@ typedef NS_ENUM(NSInteger, SGBDrillDownControllerVisibility)
 };
 
 NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
+NSString * const SGBDrillDownControllerDidPushNotification = @"SGBDrillDownControllerDidPushNotification";
+NSString * const SGBDrillDownControllerDidPopNotification = @"SGBDrillDownControllerDidPopNotification";
+NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownControllerDidReplaceNotification";
 
 @interface SGBDrillDownController () <UINavigationBarDelegate>
 
@@ -717,6 +720,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
         if (completion) completion();
         
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPushNotification object:self];
+        
     }];
 }
 
@@ -891,6 +896,8 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         
         if (completion) completion();
         
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPopNotification object:self];
+        
     }];
     
     return poppedViewController;
@@ -1030,6 +1037,10 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
         [newLeftController viewDidAppear:animated];
         [newRightController viewDidAppear:animated];
         
+        if (completion) completion();
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPopNotification object:self];
+        
     }];
 }
 
@@ -1127,6 +1138,10 @@ NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerExcep
             [oldRightController.view removeFromSuperview];
             [oldRightController didMoveToParentViewController:nil];
         }
+        
+        if (completion) completion();
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidReplaceNotification object:self];
                 
     }];
 }
