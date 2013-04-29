@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
 
   s.license      = 'MIT'
   s.author       = 'Simon Booth'
-  s.source       = { :git => "https://github.com/percysnoodle/SGBDrillDownController.git", :tag => "1.0.4" }
+  s.source       = { :git => "https://github.com/percysnoodle/SGBDrillDownController.git", :tag => "1.0.5" }
 
   s.platform     = :ios, '5.0'
   s.requires_arc = true
