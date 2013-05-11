@@ -11,6 +11,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 #define kAnimationDuration 0.33
+#define kTabBarControllerSelectionKeyPath @"self.tabBarController.selectedViewController"
 
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
 {
@@ -51,6 +52,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 @property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
 @property (nonatomic, assign) BOOL suspendLayout;
+@property (nonatomic, assign) BOOL isKVOObservingParent;
 
 @end
 
@@ -82,12 +84,47 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (UITabBarItem *)tabBarItem
 {
-    return self.leftViewController.tabBarItem;
+    return self.leftViewController.tabBarItem ?: [super tabBarItem];
 }
 
 - (UINavigationItem *)navigationItem
 {
-    return self.leftViewController.navigationItem;
+    return self.leftViewController.navigationItem ?: [super navigationItem];
+}
+
+#pragma mark - Parent controller
+
+// This duplicates UINavigationController's behaviour whereby it will pop to the root if the tab
+// bar button is tapped. With thanks to rdelmar at http://stackoverflow.com/a/16488929/15371
+
+- (void)willMoveToParentViewController:(UIViewController *)parent
+{
+    if (self.isKVOObservingParent)
+    {
+        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        self.isKVOObservingParent = NO;
+    }
+    
+    [super willMoveToParentViewController:parent];
+}
+
+- (void)didMoveToParentViewController:(UIViewController *)parent
+{
+    [super didMoveToParentViewController:parent];
+    
+    if ([self.parentViewController isKindOfClass:[UITabBarController class]])
+    {
+        [self addObserver:self forKeyPath:kTabBarControllerSelectionKeyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
+        self.isKVOObservingParent = YES;
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+    if ([keyPath isEqual:kTabBarControllerSelectionKeyPath] && [change[@"old"] isEqual:change[@"new"]] && [change[@"new"] isEqual:self])
+    {
+        [self popToRootViewControllerAnimated:YES completion:nil];
+    }
 }
 
 #pragma mark - Navigation and toolbars

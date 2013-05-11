@@ -16,8 +16,6 @@
 
 @interface SGBDemoAppDelegate ()
 
-@property (nonatomic, strong) SGBDrillDownController *drillDownController;
-
 @end
 
 @implementation SGBDemoAppDelegate
@@ -40,15 +38,23 @@
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     self.window.backgroundColor = [UIColor scrollViewTexturedBackgroundColor];
     
-    self.drillDownController = [[SGBDrillDownController alloc] init];
-    self.window.rootViewController = self.drillDownController;
+    NSMutableArray *drillDownControllers = [NSMutableArray arrayWithCapacity:3];
+    for (int i = 0; i < 3; i++)
+    {
+        SGBDrillDownController *drillDownController = [[SGBDrillDownController alloc] init];
+        [drillDownControllers addObject:drillDownController];
+        
+        SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+        drillDownController.leftPlaceholderController = leftPlaceholderController;
+        
+        SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+        drillDownController.rightPlaceholderController = rightPlaceholderController;
+    }
+    
+    UITabBarController *tabBarController = [[UITabBarController alloc] init];
+    tabBarController.viewControllers = drillDownControllers;
+    self.window.rootViewController = tabBarController;
     [self.window makeKeyAndVisible];
-    
-    SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-    self.drillDownController.leftPlaceholderController = leftPlaceholderController;
-    
-    SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-    self.drillDownController.rightPlaceholderController = rightPlaceholderController;
 }
 
 @end
