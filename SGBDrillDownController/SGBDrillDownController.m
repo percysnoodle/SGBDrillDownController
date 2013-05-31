@@ -30,8 +30,11 @@ typedef NS_ENUM(NSInteger, SGBDrillDownControllerVisibility)
 };
 
 NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
+NSString * const SGBDrillDownControllerWillPushNotification = @"SGBDrillDownControllerWillPushNotification";
 NSString * const SGBDrillDownControllerDidPushNotification = @"SGBDrillDownControllerDidPushNotification";
+NSString * const SGBDrillDownControllerWillPopNotification = @"SGBDrillDownControllerWillPopNotification";
 NSString * const SGBDrillDownControllerDidPopNotification = @"SGBDrillDownControllerDidPopNotification";
+NSString * const SGBDrillDownControllerWillReplaceNotification = @"SGBDrillDownControllerWillReplaceNotification";
 NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownControllerDidReplaceNotification";
 
 @interface SGBDrillDownController () <UINavigationBarDelegate>
@@ -680,6 +683,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPushNotification object:self];
+        
         self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
@@ -862,6 +867,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
+        
         self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
@@ -1023,6 +1030,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
+        
         self.leftNavigationBar.alpha = 1;
         self.rightNavigationBar.alpha = 1;
         self.leftToolbar.alpha = 1;
@@ -1148,6 +1157,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self transitionWithDuration:animationDuration animations:^{
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
         
         self.rightNavigationBar.alpha = 1;
         self.rightToolbar.alpha = 1;
