@@ -85,6 +85,15 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     return self;
 }
 
+- (void)dealloc
+{
+    if (self.isKVOObservingParent)
+    {
+        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        self.isKVOObservingParent = NO;
+    }
+}
+
 - (UITabBarItem *)tabBarItem
 {
     return self.leftViewController.tabBarItem ?: [super tabBarItem];
