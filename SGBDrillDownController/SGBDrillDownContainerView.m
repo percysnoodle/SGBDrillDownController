@@ -8,6 +8,8 @@
 
 #import "SGBDrillDownContainerView.h"
 
+#define ON_LEGACY_UI ([[[UIDevice currentDevice] systemVersion] integerValue] < 7)
+
 @implementation SGBDrillDownContainerView
 
 - (id)initWithFrame:(CGRect)frame
@@ -18,16 +20,18 @@
         self.clipsToBounds = NO;
         self.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         
+        UIColor *borderColor = ON_LEGACY_UI ? [UIColor blackColor] : [UIColor lightGrayColor];
+        
         _leftBorderView = [[UIView alloc] init];
         _leftBorderView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
         _leftBorderView.opaque = YES;
-        _leftBorderView.backgroundColor = [UIColor blackColor];
+        _leftBorderView.backgroundColor = borderColor;
         [self addSubview:_leftBorderView];
         
         _rightBorderView = [[UIView alloc] init];
         _rightBorderView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin;
         _rightBorderView.opaque = YES;
-        _rightBorderView.backgroundColor = [UIColor blackColor];
+        _rightBorderView.backgroundColor = borderColor;
         [self addSubview:_rightBorderView];
         
         _contentView = [[UIView alloc] initWithFrame:self.bounds];
