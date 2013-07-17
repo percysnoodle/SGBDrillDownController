@@ -19,6 +19,7 @@
     {
         self.clipsToBounds = NO;
         self.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+        self.translatesAutoresizingMaskIntoConstraints = NO;
         
         UIColor *borderColor = ON_LEGACY_UI ? [UIColor blackColor] : [UIColor lightGrayColor];
         
