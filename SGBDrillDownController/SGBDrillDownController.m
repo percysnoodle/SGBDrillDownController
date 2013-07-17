@@ -394,6 +394,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
               atPosition:(SGBDrillDownControllerPosition)position
               visibility:(SGBDrillDownControllerVisibility)visibility
 {
+    if (!controller) return;
+    
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
@@ -1344,4 +1346,3 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 }
 
 @end
-

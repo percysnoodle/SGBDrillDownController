@@ -56,6 +56,11 @@
     self.rightBorderView.frame = CGRectMake(frame.size.width, 0, 1, frame.size.height);
 }
 
+// on iOS 7, the center and bounds keep getting messed up by _applyISEngineLayoutValues
+// but since we only ever set the frame, we can stop it by killing setCenter and setBounds.
+- (void)setCenter:(CGPoint)center { return; }
+- (void)setBounds:(CGRect)bounds { return; }
+
 @end
 
 @implementation UIView (SGBDrillDownContainerView)
