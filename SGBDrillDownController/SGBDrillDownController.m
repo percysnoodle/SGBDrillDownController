@@ -363,7 +363,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
     
     CGFloat containerLeft = 0, viewLeft = 0;
-    CGFloat viewWidth;
+    CGFloat viewWidth = 0;
     
     switch (position)
     {
