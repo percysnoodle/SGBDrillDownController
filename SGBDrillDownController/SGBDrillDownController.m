@@ -721,6 +721,12 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
                 
                 // The old right controller moves to the left
                 [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
+                
+                if ( [oldRightController isKindOfClass:[UITableViewController class]] ) {
+                    // A table header view in particular will not resize correctly
+                    // unless we reload data.
+                    [[(UITableViewController *)oldRightController tableView] reloadData];
+                }
             }
             
             if (viewController)
@@ -901,6 +907,12 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
         // The new left controller moves to the left
         [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
+        
+        if ( [newLeftController isKindOfClass:[UITableViewController class]] ) {
+            // A table header view in particular will not resize correctly
+            // unless we reload data.
+            [[(UITableViewController *)newLeftController tableView] reloadData];
+        }
         
         // The new right controller moves to the right
         [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
