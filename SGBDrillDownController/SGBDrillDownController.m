@@ -377,17 +377,17 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (void)bringBarsToFront
 {
-    [self.view bringSubviewToFront:self.leftNavigationBar];
     [self.view bringSubviewToFront:self.leftNavigationImageView];
+    [self.view bringSubviewToFront:self.leftNavigationBar];
     
-    [self.view bringSubviewToFront:self.rightNavigationBar];
     [self.view bringSubviewToFront:self.rightNavigationImageView];
+    [self.view bringSubviewToFront:self.rightNavigationBar];
     
-    [self.view bringSubviewToFront:self.leftToolbar];
     [self.view bringSubviewToFront:self.leftToolbarImageView];
+    [self.view bringSubviewToFront:self.leftToolbar];
     
-    [self.view bringSubviewToFront:self.rightToolbar];
     [self.view bringSubviewToFront:self.rightToolbarImageView];
+    [self.view bringSubviewToFront:self.rightToolbar];
 }
 
 - (void)layoutController:(UIViewController *)controller
