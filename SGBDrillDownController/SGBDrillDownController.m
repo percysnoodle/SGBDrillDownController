@@ -13,6 +13,8 @@
 #define kAnimationDuration 0.33
 #define kTabBarControllerSelectionKeyPath @"self.tabBarController.selectedViewController"
 
+#define ON_LEGACY_UI ([[[UIDevice currentDevice] systemVersion] integerValue] < 7)
+
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
 {
     SGBDrillDownControllerPositionLeft,
@@ -37,7 +39,7 @@ NSString * const SGBDrillDownControllerDidPopNotification = @"SGBDrillDownContro
 NSString * const SGBDrillDownControllerWillReplaceNotification = @"SGBDrillDownControllerWillReplaceNotification";
 NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownControllerDidReplaceNotification";
 
-@interface SGBDrillDownController () <UINavigationBarDelegate>
+@interface SGBDrillDownController () <UINavigationBarDelegate, UIToolbarDelegate>
 
 @property (nonatomic, strong, readwrite) NSMutableArray *leftViewControllers;
 @property (nonatomic, strong, readwrite) UIViewController *rightViewController;
@@ -96,12 +98,22 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (UITabBarItem *)tabBarItem
 {
-    return self.leftViewController.tabBarItem ?: [super tabBarItem];
+    if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] tabBarItem])
+    {
+        return [self.leftViewControllers[0] tabBarItem];
+    }
+    
+    return [super tabBarItem];
 }
 
 - (UINavigationItem *)navigationItem
 {
-    return self.leftViewController.navigationItem ?: [super navigationItem];
+    if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] navigationItem])
+    {
+        return [self.leftViewControllers[0] navigationItem];
+    }
+    
+    return [super navigationItem];
 }
 
 #pragma mark - Parent controller
@@ -163,7 +175,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self performLayout];
         
     } completion:^(BOOL finished) {
-       
+        
         if (navigationBarsHidden)
         {
             self.leftNavigationBar.hidden = YES;
@@ -197,7 +209,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self performLayout];
         
     } completion:^(BOOL finished) {
-       
+        
         if (toolbarsHidden)
         {
             self.leftToolbar.hidden = YES;
@@ -215,37 +227,51 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     self.view = [[UIView alloc] init];
     
-    self.leftNavigationImageView = [[UIImageView alloc] init];
-    self.leftNavigationImageView.hidden = self.navigationBarsHidden;
-    [self.view addSubview:self.leftNavigationImageView];
+    if (ON_LEGACY_UI)
+    {
+        self.leftNavigationImageView = [[UIImageView alloc] init];
+        self.leftNavigationImageView.hidden = self.navigationBarsHidden;
+        [self.view addSubview:self.leftNavigationImageView];
+    }
     
     self.leftNavigationBar = [[self.navigationBarClass alloc] init];
     self.leftNavigationBar.delegate = self;
     self.leftNavigationBar.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.leftNavigationBar];
     
-    self.rightNavigationImageView = [[UIImageView alloc] init];
-    self.rightNavigationImageView.hidden = self.navigationBarsHidden;
-    [self.view addSubview:self.rightNavigationImageView];
+    if (ON_LEGACY_UI)
+    {
+        self.rightNavigationImageView = [[UIImageView alloc] init];
+        self.rightNavigationImageView.hidden = self.navigationBarsHidden;
+        [self.view addSubview:self.rightNavigationImageView];
+    }
     
     self.rightNavigationBar = [[self.navigationBarClass alloc] init];
     self.rightNavigationBar.delegate = self;
     self.rightNavigationBar.hidden = self.navigationBarsHidden;
     [self.view addSubview:self.rightNavigationBar];
     
-    self.leftToolbarImageView = [[UIImageView alloc] init];
-    self.leftToolbarImageView.hidden = self.toolbarsHidden;
-    [self.view addSubview:self.leftToolbarImageView];
+    if (ON_LEGACY_UI)
+    {
+        self.leftToolbarImageView = [[UIImageView alloc] init];
+        self.leftToolbarImageView.hidden = self.toolbarsHidden;
+        [self.view addSubview:self.leftToolbarImageView];
+    }
     
     self.leftToolbar = [[self.toolbarClass alloc] init];
+    self.leftToolbar.delegate = self;
     self.leftToolbar.hidden = self.toolbarsHidden;
     [self.view addSubview:self.leftToolbar];
     
-    self.rightToolbarImageView = [[UIImageView alloc] init];
-    self.rightToolbarImageView.hidden = self.toolbarsHidden;
-    [self.view addSubview:self.rightToolbarImageView];
+    if (ON_LEGACY_UI)
+    {
+        self.rightToolbarImageView = [[UIImageView alloc] init];
+        self.rightToolbarImageView.hidden = self.toolbarsHidden;
+        [self.view addSubview:self.rightToolbarImageView];
+    }
     
     self.rightToolbar = [[self.toolbarClass alloc] init];
+    self.rightToolbar.delegate = self;
     self.rightToolbar.hidden = self.toolbarsHidden;
     [self.view addSubview:self.rightToolbar];
     
@@ -300,19 +326,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (void)layoutNavigationBar:(UINavigationBar *)navigationBar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownControllerPosition)position
 {
     CGFloat top = 0;
-    CGFloat height = 44;
-    if (self.navigationBarsHidden) top -= height;
+    
+    CGFloat navigationBarHeight = ON_LEGACY_UI ? 44 : 64;
+    if (self.navigationBarsHidden) top -= navigationBarHeight;
     
     CGRect frame;
     
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, height);
+            frame = CGRectMake(0, top, self.leftControllerWidth, navigationBarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
+            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, navigationBarHeight);
             break;
     }
     
@@ -323,19 +350,24 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (void)layoutToolbar:(UIToolbar *)toolbar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownControllerPosition)position
 {
     CGFloat top = self.view.bounds.size.height;
-    CGFloat height = 44;
-    if (!self.toolbarsHidden) top -= height;
+    if ([self respondsToSelector:@selector(bottomLayoutGuide)])
+    {
+        top -= [self.bottomLayoutGuide length];
+    }
+    
+    CGFloat toolbarHeight = 44;
+    if (!self.toolbarsHidden) top -= toolbarHeight;
     
     CGRect frame;
     
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, height);
+            frame = CGRectMake(0, top, self.leftControllerWidth, toolbarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, height);
+            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, toolbarHeight);
             break;
     }
     
@@ -343,23 +375,47 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     imageView.frame = frame;
 }
 
+- (void)bringBarsToFront
+{
+    [self.view bringSubviewToFront:self.leftNavigationImageView];
+    [self.view bringSubviewToFront:self.leftNavigationBar];
+    
+    [self.view bringSubviewToFront:self.rightNavigationImageView];
+    [self.view bringSubviewToFront:self.rightNavigationBar];
+    
+    [self.view bringSubviewToFront:self.leftToolbarImageView];
+    [self.view bringSubviewToFront:self.leftToolbar];
+    
+    [self.view bringSubviewToFront:self.rightToolbarImageView];
+    [self.view bringSubviewToFront:self.rightToolbar];
+}
+
 - (void)layoutController:(UIViewController *)controller
               atPosition:(SGBDrillDownControllerPosition)position
               visibility:(SGBDrillDownControllerVisibility)visibility
 {
+    if (!controller) return;
+    
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
     
+    if ([self respondsToSelector:@selector(bottomLayoutGuide)])
+    {
+        height -= [self.bottomLayoutGuide length];
+    }
+    
     if (!self.navigationBarsHidden)
     {
-        top += 44;
-        height -= 44;
+        CGFloat navigationBarHeight = ON_LEGACY_UI ? 44 : 64;
+        top += navigationBarHeight;
+        height -= navigationBarHeight;
     }
     
     if (!self.toolbarsHidden)
     {
-        height -= 44;
+        CGFloat toolbarHeight = 44;
+        height -= toolbarHeight;
     }
     
     CGFloat containerLeft = 0, viewLeft = 0;
@@ -457,6 +513,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     {
         [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
     }
+    
+    [self bringBarsToFront];
 }
 
 - (UIImage *)imageForView:(UIView *)view
@@ -552,7 +610,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
                             options:UIViewAnimationOptionCurveEaseInOut|UIViewAnimationOptionAllowAnimatedContent
                          animations:animations
                          completion:^(BOOL finished) {
-                           
+                             
                              self.suspendLayout = NO;
                              if (completion) completion(finished);
                              
@@ -573,14 +631,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
         [UIView transitionWithView:self.view
                           duration:duration
-                            options:UIViewAnimationOptionCurveEaseInOut|UIViewAnimationOptionAllowAnimatedContent|UIViewAnimationOptionTransitionCrossDissolve
-                         animations:animations
-                         completion:^(BOOL finished) {
+                           options:UIViewAnimationOptionCurveEaseInOut|UIViewAnimationOptionAllowAnimatedContent|UIViewAnimationOptionTransitionCrossDissolve
+                        animations:animations
+                        completion:^(BOOL finished) {
                             
-                             self.suspendLayout = NO;
-                             if (completion) completion(finished);
-                             
-                         }];
+                            self.suspendLayout = NO;
+                            if (completion) completion(finished);
+                            
+                        }];
     }
     else
     {
@@ -592,14 +650,17 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
     if (!viewController && !self.rightViewController) return;
-        
+    
     if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a controller that is already in the stack"];
- 
-    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
-    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
-    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
-    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
-    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    
+    if (ON_LEGACY_UI)
+    {
+        // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+        self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
+        self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+        self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+        self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    }
     
     // Work out what sort of push this is
     BOOL pushingLeftController = (self.viewControllers.count == 0);
@@ -656,10 +717,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         fakeItem.hidesBackButton = YES;
         [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
-        self.leftNavigationBar.alpha = 0;
+        if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
         
         self.leftToolbar.items = viewController.toolbarItems;
-        self.leftToolbar.alpha = 0;
+        if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
     else
     {
@@ -674,31 +735,36 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         }
         
         [self.rightNavigationBar setItems:[NSArray arrayWithObjects:viewController.navigationItem, nil] animated:animated];
-        self.rightNavigationBar.alpha = 0;
+        if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
         
         self.rightToolbar.items = viewController.toolbarItems;
-        self.rightToolbar.alpha = 0;
+        if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
         
         if (!pushingNewRightController)
         {
             [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:animated];
-            self.leftNavigationBar.alpha = 0;
+            if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
             
             self.leftToolbar.items = [self.leftViewController toolbarItems];
-            self.leftToolbar.alpha = 0;
+            if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
         }
     }
+    
+    [self bringBarsToFront];
     
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPushNotification object:self];
         
-        self.leftNavigationBar.alpha = 1;
-        self.rightNavigationBar.alpha = 1;
-        self.leftToolbar.alpha = 1;
-        self.rightToolbar.alpha = 1;
-            
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationBar.alpha = 1;
+            self.rightNavigationBar.alpha = 1;
+            self.leftToolbar.alpha = 1;
+            self.rightToolbar.alpha = 1;
+        }
+        
         if (pushingLeftController)
         {
             // The new controller moves to the left
@@ -736,10 +802,13 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
     } completion:^(BOOL finished) {
         
-        self.leftNavigationImageView.image = nil;
-        self.rightNavigationImageView.image = nil;
-        self.leftToolbarImageView.image = nil;
-        self.rightToolbarImageView.image = nil;
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationImageView.image = nil;
+            self.rightNavigationImageView.image = nil;
+            self.leftToolbarImageView.image = nil;
+            self.rightToolbarImageView.image = nil;
+        }
         
         if (viewController)
         {
@@ -780,11 +849,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.viewControllers.count < 1) return nil;
     
-    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
-    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
-    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
-    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
-    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    if (ON_LEGACY_UI)
+    {
+        // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+        self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
+        self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+        self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+        self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    }
     
     // Work out what sort of pop this is
     BOOL poppingLastController = (self.viewControllers.count == 1);
@@ -800,7 +872,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     else
     {
         poppedViewController = self.rightViewController;
-    
+        
         if (poppingSecondLastController)
         {
             self.rightViewController = nil;
@@ -839,10 +911,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         NSArray *newNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
         
         [self.leftNavigationBar setItems:newNavigationItems animated:animated];
-        self.leftNavigationBar.alpha = 0;
+        if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
         
         self.leftToolbar.items = newLeftController.toolbarItems;
-        self.leftToolbar.alpha = 0;
+        if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
     
     // insert a fake item so that the navigation bar does a pop animation
@@ -859,10 +931,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self.rightNavigationBar setItems:@[ fakeItem ] animated:NO];
         [self.rightNavigationBar setItems:@[] animated:animated];
     }
-    self.rightNavigationBar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
     
     self.rightToolbar.items = newRightController.toolbarItems;
-    self.rightToolbar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
     
     if (poppedViewController)
     {
@@ -873,15 +945,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self.rightPlaceholderController viewWillDisappear:animated];
     }
     
+    [self bringBarsToFront];
+    
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
         
-        self.leftNavigationBar.alpha = 1;
-        self.rightNavigationBar.alpha = 1;
-        self.leftToolbar.alpha = 1;
-        self.rightToolbar.alpha = 1;
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationBar.alpha = 1;
+            self.rightNavigationBar.alpha = 1;
+            self.leftToolbar.alpha = 1;
+            self.rightToolbar.alpha = 1;
+        }
         
         if (poppingLastController)
         {
@@ -968,11 +1045,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         return;
     }
     
-    // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
-    self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
-    self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
-    self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
-    self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    if (ON_LEGACY_UI)
+    {
+        // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+        self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
+        self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
+        self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
+        self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
+    }
     
     // Work out what controllers to pop to
     NSInteger indexOfOldLeftViewController = [self.viewControllers indexOfObject:self.leftViewController];
@@ -1009,20 +1089,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     NSArray *newNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
     
     [self.leftNavigationBar setItems:newNavigationItems animated:animated];
-    self.leftNavigationBar.alpha = 0;
+    if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
     
     self.leftToolbar.items = newLeftController.toolbarItems;
-    self.leftToolbar.alpha = 0;
+    if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     
     // insert a fake item so that the navigation bar does a pop animation
     UINavigationItem *lastItem = [[UINavigationItem alloc] init];
     lastItem.hidesBackButton = YES;
     [self.rightNavigationBar setItems:@[ newRightController.navigationItem, lastItem ] animated:NO];
     [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
-    self.rightNavigationBar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
     
     self.rightToolbar.items = newRightController.toolbarItems;
-    self.rightToolbar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
     
     // The old controllers are going away
     [oldLeftController willMoveToParentViewController:nil];
@@ -1036,15 +1116,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self.rightPlaceholderController viewWillDisappear:animated];
     }
     
+    [self bringBarsToFront];
+    
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
     [self animateWithDuration:animationDuration animations:^{
         
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
         
-        self.leftNavigationBar.alpha = 1;
-        self.rightNavigationBar.alpha = 1;
-        self.leftToolbar.alpha = 1;
-        self.rightToolbar.alpha = 1;
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationBar.alpha = 1;
+            self.rightNavigationBar.alpha = 1;
+            self.leftToolbar.alpha = 1;
+            self.rightToolbar.alpha = 1;
+        }
         
         // The new left one moves to the left
         [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
@@ -1127,10 +1212,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
     
     [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:NO];
-    self.rightNavigationBar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
     
     self.rightToolbar.items = newRightController.toolbarItems;
-    self.rightToolbar.alpha = 0;
+    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
     
     if (oldRightController)
     {
@@ -1164,13 +1249,15 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
     newRightController.view.drillDownContainerView.alpha = 0;
     
+    [self bringBarsToFront];
+    
     NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
-    [self transitionWithDuration:animationDuration animations:^{
+    [self animateWithDuration:animationDuration animations:^{
         
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
         
-        self.rightNavigationBar.alpha = 1;
-        self.rightToolbar.alpha = 1;
+        if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 1;
+        if (ON_LEGACY_UI) self.rightToolbar.alpha = 1;
         
         oldRightController.view.drillDownContainerView.alpha = 0;
         newRightController.view.drillDownContainerView.alpha = 1;
@@ -1199,7 +1286,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         if (completion) completion();
         
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidReplaceNotification object:self];
-                
+        
     }];
 }
 
@@ -1231,6 +1318,13 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 #pragma mark - Navigation bar delegate
 
+- (UIBarPosition)positionForBar:(id<UIBarPositioning>)bar
+{
+    if ((bar == self.leftNavigationBar) || (bar == self.rightNavigationBar)) return UIBarPositionTopAttached;
+    if ((bar == self.leftToolbar) || (bar == self.rightToolbar)) return UIBarPositionBottom;
+    return UIBarPositionAny;
+}
+
 - (BOOL)navigationBar:(UINavigationBar *)navigationBar shouldPopItem:(UINavigationItem *)item
 {
     [self popViewControllerAnimated:YES completion:nil];
@@ -1252,4 +1346,3 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 }
 
 @end
-
