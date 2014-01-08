@@ -56,6 +56,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 @property (nonatomic, strong, readwrite) UIImageView *rightToolbarImageView;
 @property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
+@property (nonatomic, assign) CGFloat currentLeftControllerWidth;
+
 @property (nonatomic, assign) BOOL suspendLayout;
 @property (nonatomic, assign) BOOL isKVOObservingParent;
 
@@ -82,6 +84,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
         _leftControllerWidth = 320;
+        _currentLeftControllerWidth = 320;
         _leftViewControllers = [[NSMutableArray alloc] init];
     }
     return self;
@@ -100,11 +103,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (UIInterfaceOrientationIsPortrait(toInterfaceOrientation))
     {
-        _leftControllerWidth = _hideLeftViewControllerOnPortrait ? 0 : 320;
+        _currentLeftControllerWidth = _shouldHideLeftViewControllerOnPortrait ? 0 : _leftControllerWidth;
     }
     else
     {
-        _leftControllerWidth = 320;
+        _currentLeftControllerWidth = _leftControllerWidth;
     }
   
     [self performLayout];
@@ -349,11 +352,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, navigationBarHeight);
+            frame = CGRectMake(0, top, self.currentLeftControllerWidth, navigationBarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, navigationBarHeight);
+            frame = CGRectMake(self.currentLeftControllerWidth, top, self.view.bounds.size.width - self.currentLeftControllerWidth, navigationBarHeight);
             break;
     }
     
@@ -377,11 +380,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, toolbarHeight);
+            frame = CGRectMake(0, top, self.currentLeftControllerWidth, toolbarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, toolbarHeight);
+            frame = CGRectMake(self.currentLeftControllerWidth, top, self.view.bounds.size.width - self.currentLeftControllerWidth, toolbarHeight);
             break;
     }
     
@@ -438,11 +441,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            viewWidth = self.leftControllerWidth;
+            viewWidth = self.currentLeftControllerWidth;
             break;
             
         case SGBDrillDownControllerPositionRight:
-            containerLeft = self.leftControllerWidth + 1;
+            containerLeft = self.currentLeftControllerWidth + 1;
             viewWidth = width - containerLeft;
             break;
     }
