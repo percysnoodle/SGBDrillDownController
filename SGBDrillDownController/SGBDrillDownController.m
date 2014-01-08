@@ -72,10 +72,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (id)init
 {
-    return [self initWithNavigationBarClass:[UINavigationBar class] toolbarClass:[UIToolbar class]];
+    return [self initWithNavigationBarClass:[UINavigationBar class] toolbarClass:[UIToolbar class] leftControllerWidth:320 leftControllerHiddenOnPortrait:NO];
 }
 
-- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass
+- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass leftControllerWidth:(CGFloat)width leftControllerHiddenOnPortrait:(BOOL)hidden
 {
     self = [super initWithNibName:nil bundle:nil];
     if (self)
@@ -83,8 +83,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         _navigationBarClass = navigationBarClass;
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
-        _leftControllerWidth = 320;
-        _currentLeftControllerWidth = 320;
+        _leftControllerWidth = width;
+        _currentLeftControllerWidth = width;
+        _shouldHideLeftViewControllerOnPortrait = hidden;
         _leftViewControllers = [[NSMutableArray alloc] init];
     }
     return self;

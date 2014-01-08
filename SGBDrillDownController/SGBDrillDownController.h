@@ -20,7 +20,7 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
 @property (nonatomic, assign, readonly) Class navigationBarClass;
 @property (nonatomic, assign, readonly) Class toolbarClass;
-- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass;
+- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass leftControllerWidth:(CGFloat)width leftControllerHiddenOnPortrait:(BOOL)hidden;
 
 @property (nonatomic, strong, readonly) UINavigationBar *leftNavigationBar;
 @property (nonatomic, strong, readonly) UINavigationBar *rightNavigationBar;
