@@ -96,6 +96,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
 }
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    if (UIInterfaceOrientationIsPortrait(toInterfaceOrientation))
+    {
+        _leftControllerWidth = _hideLeftViewControllerOnPortrait ? 0 : 320;
+    }
+    else
+    {
+        _leftControllerWidth = 320;
+    }
+  
+    [self performLayout];
+}
+
 - (UITabBarItem *)tabBarItem
 {
     if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] tabBarItem])

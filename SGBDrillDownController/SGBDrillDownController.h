@@ -45,6 +45,8 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 - (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 
 // Split behaviour
+@property (nonatomic, assign) BOOL hideLeftViewControllerOnPortrait;
+
 - (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 
 - (void)showRightViewController:(UIViewController *)rightViewController forLeftViewController:(UIViewController *)leftViewController animated:(BOOL)animated completion:(void(^)(void))completion;
