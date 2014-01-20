@@ -541,7 +541,6 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [placeholderController.view.drillDownContainerView removeFromSuperview];
         [placeholderController.view removeFromSuperview];
         [placeholderController removeFromParentViewController];
-        [placeholderController didMoveToParentViewController:nil];
     }
 }
 
@@ -549,13 +548,12 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (placeholderController)
     {
-        [placeholderController willMoveToParentViewController:self];
+        [self addChildViewController:placeholderController];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
         [self.view insertSubview:containerView atIndex:0];
-        
         [containerView addViewToContentView:placeholderController.view];
-        [self addChildViewController:placeholderController];
+        
         [placeholderController didMoveToParentViewController:self];
     }
 }
@@ -699,7 +697,6 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     
     if (viewController)
     {
-        [viewController willMoveToParentViewController:self];
         [self addChildViewController:viewController];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
@@ -1002,10 +999,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
         if (poppedViewController)
         {
-            [poppedViewController removeFromParentViewController];
             [poppedViewController.view.drillDownContainerView removeFromSuperview];
             [poppedViewController.view removeFromSuperview];
-            [poppedViewController didMoveToParentViewController:nil];
+            [poppedViewController removeFromParentViewController];
         }
         else
         {
@@ -1160,18 +1156,16 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
         for (UIViewController *oldViewController in oldLeftViewControllers)
         {
-            [oldViewController removeFromParentViewController];
             [oldViewController.view.drillDownContainerView removeFromSuperview];
             [oldViewController.view removeFromSuperview];
-            [oldViewController didMoveToParentViewController:nil];
+            [oldViewController removeFromParentViewController];
         }
         
         if (oldRightController)
         {
-            [oldRightController removeFromParentViewController];
             [oldRightController.view.drillDownContainerView removeFromSuperview];
             [oldRightController.view removeFromSuperview];
-            [oldRightController didMoveToParentViewController:nil];
+            [oldRightController removeFromParentViewController];
         }
         else
         {
@@ -1235,8 +1229,6 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     if (newRightController)
     {
         self.rightViewController = newRightController;
-        
-        [viewController willMoveToParentViewController:self];
         [self addChildViewController:viewController];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
@@ -1282,10 +1274,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         }
         else
         {
-            [oldRightController removeFromParentViewController];
             [oldRightController.view.drillDownContainerView removeFromSuperview];
             [oldRightController.view removeFromSuperview];
-            [oldRightController didMoveToParentViewController:nil];
+            [oldRightController removeFromParentViewController];
         }
         
         if (completion) completion();
