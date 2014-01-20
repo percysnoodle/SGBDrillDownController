@@ -20,6 +20,7 @@
 		D6D4A4D716D8F4B70091B8F7 /* SGBDrillDownController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4D616D8F4B70091B8F7 /* SGBDrillDownController.m */; };
 		D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DC16D923EC0091B8F7 /* SGBDemoController.m */; };
 		D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */; };
+		F646274A188D3BD700D8919E /* SGBDemoTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = F6462749188D3BD700D8919E /* SGBDemoTabBarController.m */; };
 		F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */; };
 		F649F4621717E31800B99C35 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C316D8F47D0091B8F7 /* main.m */; };
 		F649F4631717E31800B99C35 /* SGBDemoAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D6D4A4C716D8F47D0091B8F7 /* SGBDemoAppDelegate.m */; };
@@ -62,6 +63,8 @@
 		D6D4A4DD16D923EC0091B8F7 /* SGBDemoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDemoView.h; sourceTree = "<group>"; };
 		D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoView.m; sourceTree = "<group>"; };
 		F628B3BD1717E3A3005D248C /* Funcional Tests.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Funcional Tests.plist"; sourceTree = "<group>"; };
+		F6462748188D3BD700D8919E /* SGBDemoTabBarController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDemoTabBarController.h; sourceTree = "<group>"; };
+		F6462749188D3BD700D8919E /* SGBDemoTabBarController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDemoTabBarController.m; sourceTree = "<group>"; };
 		F649F45D1716FD8B00B99C35 /* SGBDrillDownContainerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SGBDrillDownContainerView.h; sourceTree = "<group>"; };
 		F649F45E1716FD8B00B99C35 /* SGBDrillDownContainerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SGBDrillDownContainerView.m; sourceTree = "<group>"; };
 		F649F4741717E31800B99C35 /* SGBDrillDownController Tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SGBDrillDownController Tests.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -144,6 +147,8 @@
 				D6D4A4DE16D923EC0091B8F7 /* SGBDemoView.m */,
 				D6D4A4BE16D8F47D0091B8F7 /* Supporting Files */,
 				F6AF051F1717E52D00D868E8 /* Tests */,
+				F6462748188D3BD700D8919E /* SGBDemoTabBarController.h */,
+				F6462749188D3BD700D8919E /* SGBDemoTabBarController.m */,
 			);
 			path = SGBDrillDownControllerDemo;
 			sourceTree = "<group>";
@@ -310,6 +315,7 @@
 				D6D4A4DF16D923EC0091B8F7 /* SGBDemoController.m in Sources */,
 				D6D4A4E016D923EC0091B8F7 /* SGBDemoView.m in Sources */,
 				F649F45F1716FD8B00B99C35 /* SGBDrillDownContainerView.m in Sources */,
+				F646274A188D3BD700D8919E /* SGBDemoTabBarController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

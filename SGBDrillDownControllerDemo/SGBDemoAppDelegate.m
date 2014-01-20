@@ -9,6 +9,7 @@
 #import "SGBDemoAppDelegate.h"
 #import "SGBDrillDownController.h"
 #import "SGBDemoController.h"
+#import "SGBDemoTabBarController.h"
 
 #ifdef RUN_KIF_TESTS
 #import "SGBDemoTestController.h"
@@ -51,7 +52,7 @@
         drillDownController.rightPlaceholderController = rightPlaceholderController;
     }
     
-    UITabBarController *tabBarController = [[UITabBarController alloc] init];
+    SGBDemoTabBarController *tabBarController = [[SGBDemoTabBarController alloc] init];
     tabBarController.viewControllers = drillDownControllers;
     self.window.rootViewController = tabBarController;
     [self.window makeKeyAndVisible];
