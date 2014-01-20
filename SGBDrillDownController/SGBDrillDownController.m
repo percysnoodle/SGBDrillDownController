@@ -470,6 +470,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.suspendLayout) return;
     [self performLayout];
+    
+    // Autolayout workaround. Yuck.
+    [self.view layoutSubviews];
+    
+    [super viewDidLayoutSubviews];
 }
 
 - (void)performLayout
