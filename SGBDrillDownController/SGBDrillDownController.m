@@ -679,14 +679,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self.leftViewControllers addObject:viewController];
         
         // the first controller obscures the left placeholder
-        [self.leftPlaceholderController viewWillDisappear:animated];
+        [self.leftPlaceholderController beginAppearanceTransition:NO animated:animated];
     }
     else if (pushingNewRightController)
     {
         self.rightViewController = viewController;
         
         // the second controller obscures the right placeholder
-        [self.rightPlaceholderController viewWillDisappear:animated];
+        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
     }
     else
     {
@@ -694,7 +694,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         self.rightViewController = viewController;
         
         // the old left controller will be hidden
-        [oldLeftController viewWillDisappear:animated];
+        [oldLeftController beginAppearanceTransition:NO animated:animated];
     }
     
     if (viewController)
@@ -708,7 +708,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
     else
     {
-        [self.rightPlaceholderController viewWillAppear:animated];
+        [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
         self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
     }
     
@@ -821,25 +821,25 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         }
         else
         {
-            [self.rightPlaceholderController viewDidAppear:animated];
+            [self.rightPlaceholderController endAppearanceTransition];
         }
         
         if (pushingLeftController)
         {
             // the second controller obscured the right placeholder
-            [self.leftPlaceholderController viewDidDisappear:animated];
+            [self.leftPlaceholderController endAppearanceTransition];
             self.leftPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         else if (pushingNewRightController)
         {
             // the second controller obscured the right placeholder
-            [self.rightPlaceholderController viewDidDisappear:animated];
+            [self.rightPlaceholderController endAppearanceTransition];
             self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         else
         {
             // the old left controller was hidden
-            [oldLeftController viewDidDisappear:animated];
+            [oldLeftController endAppearanceTransition];
             oldLeftController.view.drillDownContainerView.hidden = YES;
         }
         
@@ -895,19 +895,19 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     if (poppingLastController)
     {
         // the left placeholder will be revealed
-        [self.leftPlaceholderController viewWillAppear:animated];
+        [self.leftPlaceholderController beginAppearanceTransition:YES animated:animated];
         self.leftPlaceholderController.view.drillDownContainerView.hidden = NO;
     }
     else if (poppingSecondLastController)
     {
         // the placeholder will be revealed
-        [self.rightPlaceholderController viewWillAppear:animated];
+        [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
         self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
     }
     else
     {
         // the new left controller will be revealed
-        [newLeftController viewWillAppear:animated];
+        [newLeftController beginAppearanceTransition:YES animated:animated];
         newLeftController.view.drillDownContainerView.hidden = NO;
     }
     
@@ -947,7 +947,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
     else
     {
-        [self.rightPlaceholderController viewWillDisappear:animated];
+        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
     }
     
     [self bringBarsToFront];
@@ -1009,24 +1009,24 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         }
         else
         {
-            [self.rightPlaceholderController viewDidDisappear:animated];
+            [self.rightPlaceholderController endAppearanceTransition];
             self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         
         if (poppingLastController)
         {
             // the left placeholder was revealed
-            [self.leftPlaceholderController viewDidAppear:animated];
+            [self.leftPlaceholderController endAppearanceTransition];
         }
         else if (poppingSecondLastController)
         {
             // the placeholder was revealed
-            [self.rightPlaceholderController viewDidAppear:animated];
+            [self.rightPlaceholderController endAppearanceTransition];
         }
         else
         {
             // the new left controller was revealed
-            [newLeftController viewDidAppear:animated];
+            [newLeftController endAppearanceTransition];
         }
         
         if (completion) completion();
@@ -1084,10 +1084,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     [self.leftViewControllers addObjectsFromArray:newLeftViewControllers];
     self.rightViewController = newRightController;
     
-    [newLeftController viewWillAppear:animated];
+    [newLeftController beginAppearanceTransition:YES animated:animated];
     newLeftController.view.drillDownContainerView.hidden = NO;
     
-    [newRightController viewWillAppear:animated];
+    [newRightController beginAppearanceTransition:YES animated:animated];
     newRightController.view.drillDownContainerView.hidden = NO;
     
     // Fix up the nav and toolbar
@@ -1118,7 +1118,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
     else
     {
-        [self.rightPlaceholderController viewWillDisappear:animated];
+        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
     }
     
     [self bringBarsToFront];
@@ -1175,12 +1175,12 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         }
         else
         {
-            [self.rightPlaceholderController viewDidDisappear:animated];
+            [self.rightPlaceholderController endAppearanceTransition];
             self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         
-        [newLeftController viewDidAppear:animated];
-        [newRightController viewDidAppear:animated];
+        [newLeftController endAppearanceTransition];
+        [newRightController endAppearanceTransition];
         
         if (completion) completion();
         
@@ -1229,7 +1229,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     else
     {
         oldRightController = self.rightPlaceholderController;
-        [oldRightController viewWillDisappear:animated];
+        [oldRightController beginAppearanceTransition:NO animated:animated];
     }
     
     if (newRightController)
@@ -1246,7 +1246,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     else
     {
         newRightController = self.rightPlaceholderController;
-        [newRightController viewWillAppear:animated];
+        [newRightController beginAppearanceTransition:YES animated:animated];
         newRightController.view.drillDownContainerView.hidden = NO;
     }
     
@@ -1271,14 +1271,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         
         if (newRightController == self.rightPlaceholderController)
         {
-            [newRightController viewDidAppear:animated];
+            [newRightController endAppearanceTransition];
         }
         
         if (oldRightController == self.rightPlaceholderController)
         {
             [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenLeft];
             oldRightController.view.drillDownContainerView.hidden = YES;
-            [oldRightController viewDidDisappear:animated];
+            [oldRightController endAppearanceTransition];
         }
         else
         {
