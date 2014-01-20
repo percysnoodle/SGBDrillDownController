@@ -9,7 +9,7 @@ Installation
 To use SGBDrillDownController in your project, add this line to your podfile:
 
 ```ruby
-pod 'SGBDrillDownController', '~> 1.0'
+pod 'SGBDrillDownController', '~> 1.1'
 ```
 
 and then run: 
