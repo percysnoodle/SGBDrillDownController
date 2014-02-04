@@ -20,7 +20,7 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
 @property (nonatomic, assign, readonly) Class navigationBarClass;
 @property (nonatomic, assign, readonly) Class toolbarClass;
-- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass;
+- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass leftControllerWidth:(CGFloat)width leftControllerHiddenOnPortrait:(BOOL)hidden;
 
 @property (nonatomic, strong, readonly) UINavigationBar *leftNavigationBar;
 @property (nonatomic, strong, readonly) UINavigationBar *rightNavigationBar;
@@ -45,6 +45,8 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 - (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void(^)(void))completion;
 
 // Split behaviour
+@property (nonatomic, assign) BOOL shouldHideLeftViewControllerOnPortrait;
+
 - (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
 
 - (void)showRightViewController:(UIViewController *)rightViewController forLeftViewController:(UIViewController *)leftViewController animated:(BOOL)animated completion:(void(^)(void))completion;

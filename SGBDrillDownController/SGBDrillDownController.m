@@ -56,6 +56,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 @property (nonatomic, strong, readwrite) UIImageView *rightToolbarImageView;
 @property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
+@property (nonatomic, assign) CGFloat currentLeftControllerWidth;
+
 @property (nonatomic, assign) BOOL suspendLayout;
 @property (nonatomic, assign) BOOL isKVOObservingParent;
 
@@ -70,10 +72,10 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (id)init
 {
-    return [self initWithNavigationBarClass:[UINavigationBar class] toolbarClass:[UIToolbar class]];
+    return [self initWithNavigationBarClass:[UINavigationBar class] toolbarClass:[UIToolbar class] leftControllerWidth:320 leftControllerHiddenOnPortrait:NO];
 }
 
-- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass
+- (id)initWithNavigationBarClass:(Class)navigationBarClass toolbarClass:(Class)toolbarClass leftControllerWidth:(CGFloat)width leftControllerHiddenOnPortrait:(BOOL)hidden
 {
     self = [super initWithNibName:nil bundle:nil];
     if (self)
@@ -81,7 +83,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         _navigationBarClass = navigationBarClass;
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
-        _leftControllerWidth = 320;
+        _leftControllerWidth = width;
+        _currentLeftControllerWidth = width;
+        _shouldHideLeftViewControllerOnPortrait = hidden;
         _leftViewControllers = [[NSMutableArray alloc] init];
     }
     return self;
@@ -94,6 +98,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
         self.isKVOObservingParent = NO;
     }
+}
+
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    if (UIInterfaceOrientationIsPortrait(toInterfaceOrientation))
+    {
+        _currentLeftControllerWidth = _shouldHideLeftViewControllerOnPortrait ? 0 : _leftControllerWidth;
+    }
+    else
+    {
+        _currentLeftControllerWidth = _leftControllerWidth;
+    }
+  
+    [self performLayout];
 }
 
 - (UITabBarItem *)tabBarItem
@@ -335,11 +353,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, navigationBarHeight);
+            frame = CGRectMake(0, top, self.currentLeftControllerWidth, navigationBarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, navigationBarHeight);
+            frame = CGRectMake(self.currentLeftControllerWidth, top, self.view.bounds.size.width - self.currentLeftControllerWidth, navigationBarHeight);
             break;
     }
     
@@ -363,11 +381,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            frame = CGRectMake(0, top, self.leftControllerWidth, toolbarHeight);
+            frame = CGRectMake(0, top, self.currentLeftControllerWidth, toolbarHeight);
             break;
             
         case SGBDrillDownControllerPositionRight:
-            frame = CGRectMake(self.leftControllerWidth, top, self.view.bounds.size.width - self.leftControllerWidth, toolbarHeight);
+            frame = CGRectMake(self.currentLeftControllerWidth, top, self.view.bounds.size.width - self.currentLeftControllerWidth, toolbarHeight);
             break;
     }
     
@@ -424,11 +442,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     switch (position)
     {
         case SGBDrillDownControllerPositionLeft:
-            viewWidth = self.leftControllerWidth;
+            viewWidth = self.currentLeftControllerWidth;
             break;
             
         case SGBDrillDownControllerPositionRight:
-            containerLeft = self.leftControllerWidth + 1;
+            containerLeft = self.currentLeftControllerWidth + 1;
             viewWidth = width - containerLeft;
             break;
     }
