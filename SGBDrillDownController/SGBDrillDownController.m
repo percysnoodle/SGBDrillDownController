@@ -290,6 +290,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (void)viewDidUnload
 {
+    [super viewDidUnload];
+
     self.leftNavigationBar = nil;
     self.rightNavigationBar = nil;
     
