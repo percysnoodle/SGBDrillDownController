@@ -397,7 +397,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
               visibility:(SGBDrillDownControllerVisibility)visibility
 {
     if (!controller) return;
-    
+
+    controller.view.autoresizingMask = UIViewAutoresizingNone;
+
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
