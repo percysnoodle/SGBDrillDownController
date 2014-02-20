@@ -19,6 +19,7 @@
 @property (nonatomic, strong) UIButton *toolbarsButton;
 @property (nonatomic, strong) UIButton *replaceButton;
 @property (nonatomic, strong) UIButton *removeButton;
+@property (nonatomic, strong) UIButton *toggleBackgroundAlphaButton;
 
 @end
 
@@ -91,6 +92,12 @@
         [_removeButton setTitle:@"Remove!" forState:UIControlStateNormal];
         [_removeButton addTarget:self action:@selector(removeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_removeButton];
+
+        _toggleBackgroundAlphaButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        _toggleBackgroundAlphaButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        [_toggleBackgroundAlphaButton setTitle:@"Toggle Background Alpha" forState:UIControlStateNormal];
+        [_toggleBackgroundAlphaButton addTarget:self action:@selector(toggleBackgroundAlphaButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_toggleBackgroundAlphaButton];
     }
     return self;
 }
@@ -108,6 +115,7 @@
     self.toolbarsButton.frame = CGRectMake(20, 332, self.bounds.size.width - 40, 44);
     self.replaceButton.frame = CGRectMake(20, 384, self.bounds.size.width - 40, 44);
     self.removeButton.frame = CGRectMake(20, 436, self.bounds.size.width - 40, 44);
+    self.toggleBackgroundAlphaButton.frame = CGRectMake(20, 488, self.bounds.size.width - 40, 44);
 }
 
 - (void)setWillAppearCount:(NSInteger)willAppearCount
@@ -180,6 +188,11 @@
 - (void)removeButtonTapped:(id)sender
 {
     [self.delegate demoViewRemoveButtonTapped:self];
+}
+
+- (void)toggleBackgroundAlphaButtonTapped:(id)sender
+{
+  [self.delegate demoViewToggleBackgroundAlphaButtonTapped:self];
 }
 
 @end

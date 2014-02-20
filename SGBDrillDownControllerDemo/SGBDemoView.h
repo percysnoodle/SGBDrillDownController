@@ -29,6 +29,7 @@
 - (void)demoViewToolbarsButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewReplaceButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewRemoveButtonTapped:(SGBDemoView *)demoView;
+- (void)demoViewToggleBackgroundAlphaButtonTapped:(SGBDemoView *)demoView;
 
 @end
 

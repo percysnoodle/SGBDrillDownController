@@ -14,6 +14,7 @@
 @property (nonatomic, assign) NSInteger willAppearCount;
 @property (nonatomic, assign) NSInteger didAppearCount;
 @property (nonatomic, assign) BOOL useAnimation;
+@property (nonatomic, assign) BOOL backgroundHasAlpha;
 
 @end
 
@@ -45,24 +46,33 @@
 - (void)loadView
 {
     self.view = [[SGBDemoView  alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-    
-    UIColor *color = [[UIColor brownColor] colorWithAlphaComponent:0.5];
-    
-    if (self.number > 0) switch (self.number % 7)
-    {
-        case 1: color = [[UIColor redColor] colorWithAlphaComponent:0.5]; break;
-        case 2: color = [[UIColor orangeColor] colorWithAlphaComponent:0.5]; break;
-        case 3: color = [[UIColor yellowColor] colorWithAlphaComponent:0.5]; break;
-        case 4: color = [[UIColor greenColor] colorWithAlphaComponent:0.5]; break;
-        case 5: color = [[UIColor cyanColor] colorWithAlphaComponent:0.5]; break;
-        case 6: color = [[UIColor blueColor] colorWithAlphaComponent:0.5]; break;
-        case 0: color = [[UIColor purpleColor] colorWithAlphaComponent:0.5]; break;
-            
-    }
-    
-    self.view.backgroundColor = color;
+    self.view.backgroundColor = [self backgroundColor];
     self.demoView.delegate = self;
     self.demoView.animationSwitchOn = self.useAnimation;
+}
+
+- (UIColor *)backgroundColor
+{
+    UIColor *baseColor = [UIColor brownColor];
+    if (self.number > 0)
+    {
+        switch (self.number % 7)
+        {
+            case 1: baseColor = [UIColor redColor]; break;
+            case 2: baseColor = [UIColor orangeColor]; break;
+            case 3: baseColor = [UIColor yellowColor]; break;
+            case 4: baseColor = [UIColor greenColor]; break;
+            case 5: baseColor = [UIColor cyanColor]; break;
+            case 6: baseColor = [UIColor blueColor]; break;
+        }
+    }
+
+    return (self.backgroundHasAlpha ? [baseColor colorWithAlphaComponent:0.5] : baseColor);
+}
+
+- (void) updateBackgroundColor
+{
+    self.view.backgroundColor = [self backgroundColor];
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -143,11 +153,22 @@
     [self requestRemoval];
 }
 
+- (void)demoViewToggleBackgroundAlphaButtonTapped:(SGBDemoView *)demoView
+{
+  [self requestToggleBackgroundAlpha];
+}
+
 - (void)requestPush
 {
     SGBDemoController *topController = [[self.drillDownController viewControllers] lastObject];
     SGBDemoController *nextController = [[SGBDemoController alloc] initWithNumber:topController.number + 1];
     nextController.useAnimation = self.useAnimation;
+    if (topController)
+    {
+        nextController.backgroundHasAlpha = topController.backgroundHasAlpha;
+        [nextController updateBackgroundColor];
+    }
+
     [self.drillDownController pushViewController:nextController animated:self.useAnimation completion:nil];
 }
 
@@ -193,6 +214,28 @@
     {
         [self.drillDownController replaceRightViewController:nil animated:self.useAnimation completion:nil];
     }
+}
+
+- (void)requestToggleBackgroundAlpha
+{
+  NSMutableArray *viewControllers = [[NSMutableArray alloc] initWithArray:self.drillDownController.viewControllers];
+  if (self.drillDownController.leftPlaceholderController)
+  {
+    [viewControllers addObject:self.drillDownController.leftPlaceholderController];
+  }
+  if (self.drillDownController.rightPlaceholderController)
+  {
+    [viewControllers addObject:self.drillDownController.rightPlaceholderController];
+  }
+  for (UIViewController *viewController in viewControllers)
+  {
+    if ([viewController isKindOfClass:[SGBDemoController class]])
+    {
+      SGBDemoController *demoController = (SGBDemoController *)viewController;
+      demoController.backgroundHasAlpha = !demoController.backgroundHasAlpha;
+      [demoController updateBackgroundColor];
+    }
+  }
 }
 
 @end
