@@ -8,6 +8,14 @@
 
 #import <UIKit/UIKit.h>
 
+typedef NS_ENUM(NSUInteger, SGBDrillDownContainerShadow)
+{
+    SGBDrillDownContainerShadowNone=0,
+    SGBDrillDownContainerShadowBoth,
+    SGBDrillDownContainerShadowLeft,
+    SGBDrillDownContainerShadowRight,
+};
+
 @interface SGBDrillDownContainerView : UIView
 
 @property (nonatomic, strong, readonly) UIView *leftBorderView;
@@ -15,6 +23,14 @@
 @property (nonatomic, strong, readonly) UIView *contentView;
 
 - (void)addViewToContentView:(UIView *)view;
+
+- (void)addShadowViewAtPosition:(SGBDrillDownContainerShadow)position;
+- (void)removeShadowView;
+- (void)setShadowViewAlpha:(CGFloat)alpha;
+
+- (void)addFadingView;
+- (void)removeFadingView;
+- (void)setFadingViewAlpha:(CGFloat)alpha;
 
 @end
 
