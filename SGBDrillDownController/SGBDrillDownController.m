@@ -10,11 +10,11 @@
 #import "SGBDrillDownContainerView.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define kAnimationDuration 0.33
-#define kTabBarControllerSelectionKeyPath @"self.tabBarController.selectedViewController"
+static NSString * const kSGBTabBarControllerSelectedViewControllerKeyPath = @"self.tabBarController.selectedViewController";
 
 #define ON_LEGACY_UI ([[[UIDevice currentDevice] systemVersion] integerValue] < 7)
 
+static const CGFloat kSGBDrillDownControllerAnimationDuration = 0.33;
 static const CGFloat kSGBDrillDownControllerHidingMaxFadingViewAlpha = 0.20;
 static const CGFloat kSGBDrillDownControllerParallaxFactor = 0.30;
 
@@ -123,7 +123,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.isKVOObservingParent)
     {
-        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        [self removeObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath context:nil];
         self.isKVOObservingParent = NO;
     }
 }
@@ -157,7 +157,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.isKVOObservingParent)
     {
-        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        [self removeObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath context:nil];
         self.isKVOObservingParent = NO;
     }
     
@@ -170,14 +170,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     
     if ([self.parentViewController isKindOfClass:[UITabBarController class]])
     {
-        [self addObserver:self forKeyPath:kTabBarControllerSelectionKeyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
+        [self addObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
         self.isKVOObservingParent = YES;
     }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if ([keyPath isEqual:kTabBarControllerSelectionKeyPath] && [change[@"old"] isEqual:change[@"new"]] && [change[@"new"] isEqual:self])
+    if ([keyPath isEqual:kSGBTabBarControllerSelectedViewControllerKeyPath] && [change[@"old"] isEqual:change[@"new"]] && [change[@"new"] isEqual:self])
     {
         [self popToRootViewControllerAnimated:YES completion:nil];
     }
@@ -706,7 +706,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
             if (fabsf(currentVelocity) > 500.0 || currentLocation.x > (self.leftControllerWidth * 0.66))
             {
                 [self popViewControllerAnimated:YES
-                 animationDuration:(kAnimationDuration * (1.0 - openPercentage))
+                 animationDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
                  isSwipeInteractivePop:YES
                  additionalAnimations:nil
                  completion:^{
@@ -716,7 +716,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
             }
             else
             {
-                [self animateWithDuration:(kAnimationDuration * (1.0 - openPercentage))
+                [self animateWithDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
                  animations:^{
                      leftControllerContainerView.frame = leftContainerStartFrame;
                      leftControllerView.frame = leftControllerStartFrame;
@@ -1021,7 +1021,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
         [self bringBarsToFront];
 
-        NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
+        NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
         [self animateWithDuration:animationDuration
          animations:^{
             [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPushNotification object:self];
@@ -1143,7 +1143,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
 {
     return [self popViewControllerAnimated:animated
-                         animationDuration:kAnimationDuration
+                         animationDuration:kSGBDrillDownControllerAnimationDuration
                      isSwipeInteractivePop:NO
                       additionalAnimations:nil
                                 completion:completion];
@@ -1475,7 +1475,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
       [leftViewContainer addShadowViewAtPosition:SGBDrillDownContainerShadowRight];
 
       [self popViewControllerAnimated:animated
-       animationDuration:kAnimationDuration
+       animationDuration:kSGBDrillDownControllerAnimationDuration
        isSwipeInteractivePop:NO
        additionalAnimations:^{
          [self layoutController:leftViewController
@@ -1596,7 +1596,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
     [self bringBarsToFront];
     
-    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
+    NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
     [self animateWithDuration:animationDuration
      animations:^{
         
