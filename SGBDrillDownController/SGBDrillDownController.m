@@ -18,14 +18,22 @@
 static const CGFloat kSGBDrillDownControllerHidingMaxFadingViewAlpha = 0.20;
 static const CGFloat kSGBDrillDownControllerParallaxFactor = 0.30;
 
+CGAffineTransform SGBDrillDownControllerLeftParallaxTransform(CGFloat maxOffset, CGFloat initialX, CGFloat updatedX, CGAffineTransform transform)
+{
+    CGFloat dx = fminf(maxOffset, (updatedX - initialX));
+    CGFloat translate = dx * kSGBDrillDownControllerParallaxFactor;
+    transform.tx = CGAffineTransformMakeTranslation(translate, 0.0).tx;
+    return transform;
+}
+
 CGRect SGBDrillDownControllerLeftParallaxFrame(CGRect leftControllerStartingFrame)
 {
     return CGRectOffset(leftControllerStartingFrame, leftControllerStartingFrame.size.width * -kSGBDrillDownControllerParallaxFactor, 0.0);
 }
 
-CGRect SGBDrillDownControllerRightParallaxFrame(CGRect leftControllerStartingFrame)
+CGRect SGBDrillDownControllerRightParallaxFrame(CGRect rightControllerStartingFrame)
 {
-    return CGRectOffset(leftControllerStartingFrame, leftControllerStartingFrame.size.width * kSGBDrillDownControllerParallaxFactor, 0.0);
+    return CGRectOffset(rightControllerStartingFrame, rightControllerStartingFrame.size.width * kSGBDrillDownControllerParallaxFactor, 0.0);
 }
 
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
@@ -75,8 +83,13 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 @property (nonatomic, strong, readwrite) UIImageView *rightToolbarImageView;
 @property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
+#ifdef __IPHONE_7_0
+@property (nonatomic, strong, readwrite) UIScreenEdgePanGestureRecognizer *swipeBackGestureRecognizer;
+#endif
+
 @property (nonatomic, assign) BOOL suspendLayout;
 @property (nonatomic, assign) BOOL isKVOObservingParent;
+@property (nonatomic, assign) BOOL animatingRotation;
 
 @end
 
@@ -307,6 +320,24 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     [self.view setNeedsLayout];
 }
 
+- (void)viewDidLoad
+{
+#ifdef __IPHONE_7_0
+    // Protect against running iOS7+ SDK compiled code on iOS6 and below...
+    if (NSClassFromString(@"UIScreenEdgePanGestureRecognizer"))
+    {
+        UIScreenEdgePanGestureRecognizer *swipeBackGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]
+                                                                        initWithTarget:self
+                                                                        action:@selector(swipeBackGestureRecognizerStateChanged:)];
+        swipeBackGestureRecognizer.edges = UIRectEdgeLeft;
+        swipeBackGestureRecognizer.minimumNumberOfTouches = 1;
+        swipeBackGestureRecognizer.maximumNumberOfTouches = 1;
+        swipeBackGestureRecognizer.delegate = self;
+        self.swipeBackGestureRecognizer = swipeBackGestureRecognizer;
+    }
+#endif
+}
+
 - (void)viewDidUnload
 {
     [super viewDidUnload];
@@ -327,15 +358,27 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 #pragma mark - Rotation
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    self.animatingRotation = YES;
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+    self.animatingRotation = NO;
+}
+
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
 {
     return YES;
 }
 
+#ifdef __IPHONE_7_0
 - (BOOL)shouldAutorotate
 {
-    return YES;
+    return (!self.swipeBackGestureRecognizer || (self.swipeBackGestureRecognizer.state == UIGestureRecognizerStatePossible));
 }
+#endif
 
 - (NSUInteger)supportedInterfaceOrientations
 {
@@ -572,6 +615,132 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     return img;
 }
 
+#pragma mark - Gestures
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+{
+    return !self.animatingRotation;
+}
+
+#ifdef __IPHONE_7_0
+- (void)swipeBackGestureRecognizerStateChanged:(UIScreenEdgePanGestureRecognizer *)recognizer
+{
+    static CGRect previousLeftContainerStartFrame;
+    static CGRect previousLeftContainerInitialParallaxFrame;
+    static CGAffineTransform previousLeftContainerTransform;
+    static CGRect leftContainerStartFrame;
+    static CGRect leftControllerStartFrame;
+    static CGPoint startLocation;
+    static SGBDrillDownChildControllerLayout rightLayout;
+
+    UIView *leftControllerView = self.leftViewController.view;
+    SGBDrillDownContainerView *leftControllerContainerView = leftControllerView.drillDownContainerView;
+    UIViewController *previousLeftViewController = (self.leftViewControllers.count > 1 ? self.leftViewControllers[self.leftViewControllers.count - 2] : self.leftPlaceholderController);
+    SGBDrillDownContainerView *previousLeftControllerContainerView = previousLeftViewController.view.drillDownContainerView;
+
+    switch (recognizer.state)
+    {
+        case UIGestureRecognizerStateBegan:
+        {
+            self.suspendLayout = YES;
+
+            rightLayout = [self layoutForController:self.leftViewController
+                                         atPosition:SGBDrillDownControllerPositionRight
+                                         visibility:SGBDrillDownControllerVisibilityShowing];
+
+            startLocation = [recognizer locationInView:self.view];
+            previousLeftContainerStartFrame = previousLeftControllerContainerView.frame;
+            leftContainerStartFrame = leftControllerContainerView.frame;
+            leftControllerStartFrame = leftControllerView.frame;
+            previousLeftContainerTransform = previousLeftControllerContainerView.transform;
+
+            [self layoutController:previousLeftViewController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            previousLeftContainerInitialParallaxFrame = SGBDrillDownControllerLeftParallaxFrame(leftContainerStartFrame);
+            previousLeftControllerContainerView.frame = previousLeftContainerInitialParallaxFrame;
+            [previousLeftControllerContainerView addFadingView];
+            [previousLeftControllerContainerView setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            previousLeftControllerContainerView.hidden = NO;
+
+            [leftControllerContainerView addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+
+            UIViewController *rightViewController = (self.rightViewController ? self.rightViewController : self.rightPlaceholderController);
+            [self.view insertSubview:rightViewController.view.drillDownContainerView belowSubview:leftControllerContainerView];
+            [self.view insertSubview:previousLeftControllerContainerView belowSubview:leftControllerContainerView];
+
+            break;
+        }
+        case UIGestureRecognizerStateChanged:
+        {
+            CGPoint currentLocation = [recognizer locationInView:self.view];
+            CGFloat dx = fmaxf(0.0, fminf(self.leftControllerWidth, (currentLocation.x - startLocation.x)));
+            CGFloat openPercentage = (dx / self.leftControllerWidth);
+            CGFloat additionalWidth = openPercentage * (rightLayout.containerViewFrame.size.width - self.leftControllerWidth);
+
+            CGRect leftControllerContainerFrame = CGRectOffset(leftContainerStartFrame, dx, 0.0);
+            leftControllerContainerFrame.size.width = self.leftControllerWidth + additionalWidth;
+            leftControllerContainerView.frame =  leftControllerContainerFrame;
+
+            CGRect leftControllerFrame = leftControllerStartFrame;
+            leftControllerFrame.size.width += additionalWidth;
+            leftControllerView.frame = leftControllerFrame;
+
+            previousLeftControllerContainerView.transform = SGBDrillDownControllerLeftParallaxTransform(self.leftControllerWidth, 0.0, dx, previousLeftControllerContainerView.transform);
+
+            CGFloat fadeAlpha = (1.0 - openPercentage) * kSGBDrillDownControllerHidingMaxFadingViewAlpha;
+            [previousLeftControllerContainerView setFadingViewAlpha:fadeAlpha];
+
+            break;
+        }
+        case UIGestureRecognizerStateEnded:
+        {
+            CGRect transformedPreviousLeftContainerFrame = CGRectApplyAffineTransform(previousLeftContainerInitialParallaxFrame, previousLeftControllerContainerView.transform);
+            previousLeftControllerContainerView.transform = previousLeftContainerTransform;
+            previousLeftControllerContainerView.frame = transformedPreviousLeftContainerFrame;
+
+            CGPoint currentLocation = [recognizer locationInView:self.view];
+            CGFloat dx = fmaxf(0.0, fminf(self.leftControllerWidth, (currentLocation.x - startLocation.x)));
+            CGFloat openPercentage = (dx / self.leftControllerWidth);
+            CGFloat currentVelocity = [recognizer velocityInView:self.view].x;
+            if (fabsf(currentVelocity) > 500.0 || currentLocation.x > (self.leftControllerWidth * 0.66))
+            {
+                [self popViewControllerAnimated:YES
+                 animationDuration:(kAnimationDuration * (1.0 - openPercentage))
+                 isSwipeInteractivePop:YES
+                 additionalAnimations:nil
+                 completion:^{
+                     // We don't allow rotation while swiping...so trigger it if necessary after we're done.
+                     [UIViewController attemptRotationToDeviceOrientation];
+                 }];
+            }
+            else
+            {
+                [self animateWithDuration:(kAnimationDuration * (1.0 - openPercentage))
+                 animations:^{
+                     leftControllerContainerView.frame = leftContainerStartFrame;
+                     leftControllerView.frame = leftControllerStartFrame;
+                     previousLeftControllerContainerView.frame = previousLeftContainerStartFrame;
+                 }
+                 completion:^(BOOL finished) {
+                     self.suspendLayout = NO;
+                     previousLeftControllerContainerView.hidden = YES;
+                     [previousLeftControllerContainerView removeFadingView];
+                     [leftControllerContainerView removeShadowView];
+
+                     // We don't allow rotation while swiping...so trigger it if necessary after we're done.
+                     [UIViewController attemptRotationToDeviceOrientation];
+                 }];
+            }
+
+            break;
+        }
+        default:
+          break;
+    }
+}
+#endif
+
 #pragma mark - Controllers
 
 - (void)removePlaceholderFromContainer:(UIViewController *)placeholderController
@@ -641,6 +810,16 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (UIViewController *)leftViewController
 {
     return [self.leftViewControllers lastObject];
+}
+
+- (void)configureLeftViewControllerForSwipeNavigation
+{
+    if (self.leftViewControllers.count >= 2)
+    {
+        UIView* leftControllerContainerView = self.leftViewController.view.drillDownContainerView;
+        [self.swipeBackGestureRecognizer.view removeGestureRecognizer:self.swipeBackGestureRecognizer];
+        [leftControllerContainerView addGestureRecognizer:self.swipeBackGestureRecognizer];
+    }
 }
 
 - (void)animateWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
@@ -952,6 +1131,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
                  }
              }
 
+             [self configureLeftViewControllerForSwipeNavigation];
+
              if (completion) completion();
 
              [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPushNotification object:self];
@@ -961,10 +1142,18 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
 {
-    return [self popViewControllerAnimated:animated additionalAnimations:nil completion:completion];
+    return [self popViewControllerAnimated:animated
+                         animationDuration:kAnimationDuration
+                     isSwipeInteractivePop:NO
+                      additionalAnimations:nil
+                                completion:completion];
 }
 
-- (UIViewController *)popViewControllerAnimated:(BOOL)animated additionalAnimations:(void (^)(void))additionalAnimations completion:(void (^)(void))completion
+- (UIViewController *)popViewControllerAnimated:(BOOL)animated
+                              animationDuration:(NSTimeInterval)animationDuration
+                          isSwipeInteractivePop:(BOOL)isSwipeInteractivePop
+                           additionalAnimations:(void (^)(void))additionalAnimations
+                                     completion:(void (^)(void))completion
 {
     UIViewController *poppedViewController = nil;
     if (self.viewControllers.count)
@@ -1048,15 +1237,20 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         {
             newLeftController = self.leftViewControllers[self.leftViewControllers.count - 2];
             [newLeftController beginAppearanceTransition:YES animated:animated];
-            [self layoutController:newLeftController
-                        atPosition:SGBDrillDownControllerPositionLeft
-                        visibility:SGBDrillDownControllerVisibilityShowing];
 
             newLeftContainer = newLeftController.view.drillDownContainerView;
-            newLeftContainer.frame = SGBDrillDownControllerLeftParallaxFrame(newLeftContainer.frame);
-            [newLeftContainer addFadingView];
-            [newLeftContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
-            newLeftContainer.hidden = NO;
+            if (!isSwipeInteractivePop)
+            {
+                [self layoutController:newLeftController
+                            atPosition:SGBDrillDownControllerPositionLeft
+                            visibility:SGBDrillDownControllerVisibilityShowing];
+
+
+                newLeftContainer.frame = SGBDrillDownControllerLeftParallaxFrame(newLeftContainer.frame);
+                [newLeftContainer addFadingView];
+                [newLeftContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+                newLeftContainer.hidden = NO;
+            }
 
             newRightController = self.leftViewController;
             newRightContainer = newRightController.view.drillDownContainerView;
@@ -1109,8 +1303,6 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
 
         [self bringBarsToFront];
-
-        NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
 
         [self animateWithDuration:animationDuration
          animations:^{
@@ -1216,6 +1408,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
                     [oldRightContainer removeFadingView];
                     oldRightContainer.hidden = YES;
                 }
+
+                [self configureLeftViewControllerForSwipeNavigation];
             }
 
             [poppedViewController endAppearanceTransition];
@@ -1281,6 +1475,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
       [leftViewContainer addShadowViewAtPosition:SGBDrillDownContainerShadowRight];
 
       [self popViewControllerAnimated:animated
+       animationDuration:kAnimationDuration
+       isSwipeInteractivePop:NO
        additionalAnimations:^{
          [self layoutController:leftViewController
                      atPosition:SGBDrillDownControllerPositionLeft
