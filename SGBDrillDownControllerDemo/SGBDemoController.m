@@ -20,13 +20,23 @@
 
 @implementation SGBDemoController
 
+static NSString * const kStateRestorationIdentifierPrefix = @"SGBDemoController";
++ (UIViewController *)viewControllerWithRestorationIdentifierPath:(NSArray *)identifierComponents coder:(NSCoder *)coder
+{
+    UIViewController *viewController = [[self alloc ] initWithNumber:0];
+    viewController.restorationIdentifier = [identifierComponents lastObject];
+    return viewController;
+}
+
 - (id)initWithNumber:(NSInteger)number
 {
     self = [super init];
     if (self)
     {
-        _number = number;
-        self.title = [NSString stringWithFormat:@"Screen %d", number];
+        self.restorationClass = self.class;
+        self.restorationIdentifier = [NSString stringWithFormat:@"%@-%i", kStateRestorationIdentifierPrefix, number];
+
+        self.number = number;
         
         _useAnimation = YES;
         
@@ -43,10 +53,26 @@
     return self;
 }
 
+static NSString * const kStateRestorationNumberKey = @"number";
+- (void)encodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super encodeWithCoder:coder];
+    [coder encodeInteger:self.number forKey:kStateRestorationNumberKey];
+}
+
+- (void)decodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super decodeRestorableStateWithCoder:coder];
+    if ([coder containsValueForKey:kStateRestorationNumberKey])
+    {
+        self.number = [coder decodeIntegerForKey:kStateRestorationNumberKey];
+    }
+}
+
 - (void)loadView
 {
     self.view = [[SGBDemoView  alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-    self.view.backgroundColor = [self backgroundColor];
+    [self updateBackgroundColor];
     self.demoView.delegate = self;
     self.demoView.animationSwitchOn = self.useAnimation;
 }
@@ -101,6 +127,16 @@
     [super viewDidDisappear:animated];
     self.didAppearCount--;
     self.demoView.didAppearCount = self.didAppearCount;
+}
+
+- (void)setNumber:(NSInteger)number
+{
+    _number = number;
+    self.title = [NSString stringWithFormat:@"Screen %d", number];
+    if (self.isViewLoaded)
+    {
+        [self updateBackgroundColor];
+    }
 }
 
 - (SGBDemoView *)demoView

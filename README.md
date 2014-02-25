@@ -20,6 +20,18 @@ $ pod install
 
 for more information about pods and podfiles, visit the [CocoaPods](http://cocoapods.org) website.
 
+iOS State Preservation and Restoration
+--------------------------------------
+
+The drill down controller implements full state preservation and restoration in iOS6+. All child view controllers with a non-empty `restorationIdentifier` property will be preserved and restored.
+
+Note: the drill down controller will do it's best to maintain as much state as possible. This results in the following caveats:
+
+- If, for example, five controllers are on the stack only the last three have a valid restoration identifier, the first two will not be restored but the last three will be restored.
+- Similarly, the drill down controller will attempt to maintain the state of which child controller is presented on the right/left, but if none of the left view controllers have valid restoration identifiers and the right view controller does, then the right view controller will be restored as the only element on the left view controller stack to maintain valid internal state of the drill down controller.
+
+It is your responsiblity to ensure that restoration identifiers are applied properly to maintain a valid state when your app is restored.
+
 iOS 7 Support
 -------------
 

@@ -7,9 +7,9 @@
 #import <UIKit/UIKit.h>
 
 
-@interface SGBDemoController : UIViewController
+@interface SGBDemoController : UIViewController <UIViewControllerRestoration>
 
-@property (nonatomic, assign, readonly) NSInteger number;
+@property (nonatomic, assign) NSInteger number;
 - (id)initWithNumber:(NSInteger)number;
 
 @end

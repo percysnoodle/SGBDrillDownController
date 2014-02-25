@@ -22,7 +22,7 @@ extern NSString * const SGBDrillDownControllerDidPopNotification;
 extern NSString * const SGBDrillDownControllerWillReplaceNotification;
 extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
-@interface SGBDrillDownController : UIViewController <UIGestureRecognizerDelegate>
+@interface SGBDrillDownController : UIViewController <UIGestureRecognizerDelegate, UIViewControllerRestoration>
 
 @property (nonatomic, assign, readonly) Class navigationBarClass;
 @property (nonatomic, assign, readonly) Class toolbarClass;

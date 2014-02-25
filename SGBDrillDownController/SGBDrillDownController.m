@@ -110,6 +110,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     self = [super initWithNibName:nil bundle:nil];
     if (self)
     {
+        self.restorationClass = self.class;
+
         _navigationBarClass = navigationBarClass;
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
@@ -146,6 +148,174 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     }
     
     return [super navigationItem];
+}
+
+#pragma mark - State restoration
+
+// Increment this constant if you making breaking changes to state preservation/restoration.
+static const NSInteger kStateRestorationVersion = 1;
+static NSString * const kStateRestorationRestorationVersionKey = @"restorationVersion";
+
++ (UIViewController *)viewControllerWithRestorationIdentifierPath:(NSArray *)identifierComponents coder:(NSCoder *)coder
+{
+  if (kStateRestorationVersion > [coder decodeIntegerForKey:kStateRestorationRestorationVersionKey])
+  {
+      NSLog(@"SGBDrillDownController not restoring state because saved restoration state is from a previous version of the preservation/restoration logic.");
+      return nil;
+  } else
+  {
+      UIViewController *viewController = [[self alloc] init];
+      viewController.restorationIdentifier = [identifierComponents lastObject];
+      return viewController;
+  }
+}
+
+static NSString * const kStateRestorationNavigationBarClassNameKey = @"navigationBarClassName";
+static NSString * const kStateRestorationToolbarClassNameKey = @"toolbarClassName";
+static NSString * const kStateRestorationLeftToolbarKey = @"leftToolbar";
+static NSString * const kStateRestorationRightToolbarKey = @"rightToolbar";
+static NSString * const kStateRestorationNavigationBarsHiddenKey = @"navigationBarsHidden";
+static NSString * const kStateRestorationToolbarsHiddenKey = @"toolbarsHidden";
+static NSString * const kStateRestorationLeftControllerWidthKey = @"leftControllerWidth";
+static NSString * const kStateRestorationLeftPlaceholderControllerKey = @"leftPlaceholderController";
+static NSString * const kStateRestorationRightPlaceholderControllerKey = @"rightPlaceholderController";
+static NSString * const kStateRestorationViewControllersKey = @"viewControllers";
+static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @"hadRestorableRightViewController";
+
+- (void)encodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super encodeRestorableStateWithCoder:coder];
+
+    [coder encodeInteger:kStateRestorationVersion forKey:kStateRestorationRestorationVersionKey];
+
+    [coder encodeObject:NSStringFromClass(self.navigationBarClass) forKey:kStateRestorationNavigationBarClassNameKey];
+    [coder encodeObject:NSStringFromClass(self.toolbarClass) forKey:kStateRestorationToolbarClassNameKey];
+    if (self.leftToolbar)
+    {
+        [coder encodeObject:self.leftToolbar forKey:kStateRestorationLeftToolbarKey];
+    }
+    if (self.rightToolbar)
+    {
+        [coder encodeObject:self.rightToolbar forKey:kStateRestorationRightToolbarKey];
+    }
+    [coder encodeBool:self.navigationBarsHidden forKey:kStateRestorationNavigationBarsHiddenKey];
+    [coder encodeBool:self.toolbarsHidden forKey:kStateRestorationToolbarsHiddenKey];
+    [coder encodeFloat:self.leftControllerWidth forKey:kStateRestorationLeftControllerWidthKey];
+    if (self.leftPlaceholderController.restorationIdentifier.length)
+    {
+        [coder encodeObject:self.leftPlaceholderController forKey:kStateRestorationLeftPlaceholderControllerKey];
+    }
+    if (self.rightPlaceholderController.restorationIdentifier.length)
+    {
+        [coder encodeObject:self.rightPlaceholderController forKey:kStateRestorationRightPlaceholderControllerKey];
+    }
+    NSMutableArray *restorableViewControllers = [[NSMutableArray alloc] init];
+    for (UIViewController *viewController in self.viewControllers) {
+        if (viewController.restorationIdentifier.length)
+        {
+            [restorableViewControllers addObject:viewController];
+        }
+    }
+    [coder encodeObject:restorableViewControllers forKey:kStateRestorationViewControllersKey];
+    [coder encodeBool:(!!self.rightViewController.restorationIdentifier.length) forKey:kStateRestorationHadRestorableRightViewControllerKey];
+}
+
+- (void)decodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super decodeRestorableStateWithCoder:coder];
+
+    if ([coder containsValueForKey:kStateRestorationNavigationBarClassNameKey])
+    {
+        Class navigationBarClass = NSClassFromString([coder decodeObjectForKey:kStateRestorationNavigationBarClassNameKey]);
+        if (navigationBarClass)
+        {
+            _navigationBarClass = navigationBarClass;
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationToolbarClassNameKey])
+    {
+        Class toolbarClass = NSClassFromString([coder decodeObjectForKey:kStateRestorationToolbarClassNameKey]);
+        if (toolbarClass)
+        {
+            _toolbarClass = toolbarClass;
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationLeftToolbarKey])
+    {
+        self.leftToolbar = [coder decodeObjectForKey:kStateRestorationLeftToolbarKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationRightToolbarKey])
+    {
+        self.rightToolbar = [coder decodeObjectForKey:kStateRestorationRightToolbarKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationNavigationBarsHiddenKey])
+    {
+        self.navigationBarsHidden = [coder decodeBoolForKey:kStateRestorationNavigationBarsHiddenKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationToolbarsHiddenKey])
+    {
+        self.toolbarsHidden = [coder decodeBoolForKey:kStateRestorationToolbarsHiddenKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationLeftControllerWidthKey])
+    {
+        self.leftControllerWidth = [coder decodeFloatForKey:kStateRestorationLeftControllerWidthKey];
+    }
+
+    void (^addViewController)(UIViewController*, SGBDrillDownControllerPosition, SGBDrillDownControllerVisibility) = ^(UIViewController *viewController, SGBDrillDownControllerPosition position, SGBDrillDownControllerVisibility visibility) {
+        [self addChildViewController:viewController];
+        SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
+        [self.view addSubview:containerView];
+        [containerView addViewToContentView:viewController.view];
+        [self layoutController:viewController
+                    atPosition:position
+                    visibility:visibility];
+    };
+    if ([coder containsValueForKey:kStateRestorationLeftPlaceholderControllerKey])
+    {
+        self.leftPlaceholderController = [coder decodeObjectForKey:kStateRestorationLeftPlaceholderControllerKey];
+        if (self.leftPlaceholderController)
+        {
+            addViewController(self.leftPlaceholderController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityShowing);
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationRightPlaceholderControllerKey])
+    {
+        self.rightPlaceholderController = [coder decodeObjectForKey:kStateRestorationRightPlaceholderControllerKey];
+        if (self.rightPlaceholderController)
+        {
+            addViewController(self.rightPlaceholderController, SGBDrillDownControllerPositionRight, SGBDrillDownControllerVisibilityShowing);
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationViewControllersKey])
+    {
+        NSMutableArray *viewControllers = [coder decodeObjectForKey:kStateRestorationViewControllersKey];
+        UIViewController *rightViewController = nil;
+        if (viewControllers.count >= 2 && [coder decodeBoolForKey:kStateRestorationHadRestorableRightViewControllerKey])
+        {
+            rightViewController = [viewControllers lastObject];
+            [viewControllers removeLastObject];
+        }
+        self.leftViewControllers = viewControllers;
+        for (NSUInteger i = 0, count = viewControllers.count, top = count - 1; i < count; ++i)
+        {
+            UIViewController *viewController = viewControllers[i];
+            if (i == top)
+            {
+                addViewController(viewController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityShowing);
+            }
+            else
+            {
+                addViewController(viewController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityOffscreenLeft);
+            }
+        }
+        [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:NO];
+        if (rightViewController)
+        {
+            self.rightViewController = rightViewController;
+            addViewController(self.rightViewController, SGBDrillDownControllerPositionRight, SGBDrillDownControllerVisibilityShowing);
+            [self.rightNavigationBar setItems:@[self.rightViewController.navigationItem] animated:NO];
+        }
+    }
 }
 
 #pragma mark - Parent controller
