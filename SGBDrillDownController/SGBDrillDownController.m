@@ -630,8 +630,6 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 {
     if (!controller) return;
 
-    controller.view.autoresizingMask = UIViewAutoresizingNone;
-
     SGBDrillDownChildControllerLayout layout = [self layoutForController:controller
                                                               atPosition:position
                                                               visibility:visibility];

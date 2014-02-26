@@ -54,6 +54,7 @@ static const CGFloat kSGBDrillDownContainerTransitionShadowRadius = 5.0;
 
 - (void)addViewToContentView:(UIView *)view
 {
+    view.autoresizingMask = UIViewAutoresizingNone;
     [self.contentView addSubview:view];
 }
 
