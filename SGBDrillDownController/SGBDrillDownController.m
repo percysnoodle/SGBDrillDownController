@@ -102,7 +102,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     {
         return [self.leftViewControllers[0] tabBarItem];
     }
-    
+    else if ([self.leftPlaceholderController tabBarItem])
+    {
+        return [self.leftPlaceholderController tabBarItem];
+    }
+
     return [super tabBarItem];
 }
 
