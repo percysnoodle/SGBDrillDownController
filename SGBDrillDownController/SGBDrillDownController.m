@@ -1062,8 +1062,6 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
             viewControllerContainer = [[SGBDrillDownContainerView alloc] init];
             [viewControllerContainer addViewToContentView:viewController.view];
             [self.view addSubview:viewControllerContainer];
-            //[viewController beginAppearanceTransition:YES animated:animated];
-          //NSLog(@"viewController beginTransition %@", viewController);
         }
 
         UIViewController *oldLeftController = self.leftViewController;
