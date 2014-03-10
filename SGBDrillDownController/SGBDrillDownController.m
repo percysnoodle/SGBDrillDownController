@@ -1297,6 +1297,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
                  }
              }
 
+             if (viewController)
+             {
+                 [viewController didMoveToParentViewController:self];
+             }
+
              [self configureLeftViewControllerForSwipeNavigation];
 
              if (completion) completion();
@@ -1694,13 +1699,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     
     if (viewController && [self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot replace with a controller that is already in the stack"];
     
-    UIViewController *oldRightController = self.rightViewController;
-    UIViewController *newRightController = viewController;
-    
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
     self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
-    
+
+    UIViewController *oldRightController = self.rightViewController;
     if (oldRightController)
     {
         self.rightViewController = nil;
@@ -1710,10 +1713,12 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
         oldRightController = self.rightPlaceholderController;
         [oldRightController beginAppearanceTransition:NO animated:animated];
     }
-    
-    if (newRightController)
+
+    UIViewController *newRightController;
+    if (viewController)
     {
-        self.rightViewController = newRightController;
+        newRightController = viewController;
+        self.rightViewController = viewController;
         [self addChildViewController:viewController];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
@@ -1821,6 +1826,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
              [oldRightController.view.drillDownContainerView removeFromSuperview];
              [oldRightController.view removeFromSuperview];
              [oldRightController removeFromParentViewController];
+         }
+
+         if (viewController)
+         {
+             [viewController didMoveToParentViewController:self];
          }
 
          if (completion) completion();
