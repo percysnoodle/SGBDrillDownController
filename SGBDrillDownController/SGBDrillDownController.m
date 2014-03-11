@@ -1580,6 +1580,8 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
             [self configureLeftViewControllerForSwipeNavigation];
         }
 
+        [poppedViewController.view.drillDownContainerView removeFromSuperview];
+        [poppedViewController.view removeFromSuperview];
         [poppedViewController endAppearanceTransition];
         [poppedViewController removeFromParentViewController];
 
@@ -1653,10 +1655,14 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
        completion:^{
            for (UIViewController *intermediateViewController in intermediaryLeftViewControllers)
            {
+               [intermediateViewController.view.drillDownContainerView removeFromSuperview];
+               [intermediateViewController.view removeFromSuperview];
                [intermediateViewController endAppearanceTransition];
                [intermediateViewController removeFromParentViewController];
            }
            [leftViewContainer removeShadowView];
+           [leftViewContainer removeFromSuperview];
+           [leftViewController.view removeFromSuperview];
            [leftViewController endAppearanceTransition];
            [leftViewController removeFromParentViewController];
 
