@@ -16,7 +16,14 @@
     return [self stepWithDescription:@"Reset the main window" executionBlock:^KIFTestStepResult(KIFTestStep *step, NSError **error) {
        
         SGBDemoAppDelegate *appDelegate = (SGBDemoAppDelegate *)[[UIApplication sharedApplication] delegate];
-        [appDelegate resetWindow];
+        if ([appDelegate.window.rootViewController isKindOfClass:[UITabBarController class]]) {
+            // Ensure that KVO deregistration occurs.
+            [((UITabBarController *)appDelegate.window.rootViewController) setViewControllers:@[]];
+        }
+        [appDelegate createWindow];
+        [appDelegate createTabBarControllerAndSetAsRootViewController];
+        [appDelegate createDrillDownControllersAndAddToTabBarController];
+        [appDelegate.window makeKeyAndVisible];
         return KIFTestStepResultSuccess;
         
     }];

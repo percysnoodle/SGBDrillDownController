@@ -82,25 +82,8 @@ static NSString * const kSGBStateRestorationDrillDownControllerTabPrefixKey = @"
 
     if (!self.window.rootViewController)
     {
-        NSMutableArray *drillDownControllers = [NSMutableArray arrayWithCapacity:3];
-        for (int i = 0; i < 3; i++)
-        {
-            SGBDrillDownController *drillDownController = [[SGBDrillDownController alloc] init];
-            drillDownController.restorationIdentifier = [NSString stringWithFormat:@"%@-%i", kSGBStateRestorationDrillDownControllerTabPrefixKey, i];
-            drillDownController.restorationClass = nil;
-            [drillDownControllers addObject:drillDownController];
-
-            SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-            leftPlaceholderController.restorationIdentifier = @"leftPlaceholderController";
-            drillDownController.leftPlaceholderController = leftPlaceholderController;
-
-            SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
-            rightPlaceholderController.restorationIdentifier = @"rightPlaceholderController";
-            drillDownController.rightPlaceholderController = rightPlaceholderController;
-        }
-
-        UITabBarController *tabBarController = [self createTabBarControllerAndSetAsRootViewController];
-        tabBarController.viewControllers = drillDownControllers;
+        [self createTabBarControllerAndSetAsRootViewController];
+        [self createDrillDownControllersAndAddToTabBarController];
     }
 
     [self.window makeKeyAndVisible];
@@ -139,6 +122,30 @@ static NSString * const kSGBStateRestorationDrillDownControllerTabPrefixKey = @"
     tabBarController.restorationIdentifier = kSGBStateRestorationRootViewControllerKey;
     self.window.rootViewController = tabBarController;
     return tabBarController;
+}
+
+- (void)createDrillDownControllersAndAddToTabBarController
+{
+    NSMutableArray *drillDownControllers = [NSMutableArray arrayWithCapacity:3];
+    for (int i = 0; i < 3; i++)
+    {
+        SGBDrillDownController *drillDownController = [[SGBDrillDownController alloc] init];
+        drillDownController.restorationIdentifier = [NSString stringWithFormat:@"%@-%i", kSGBStateRestorationDrillDownControllerTabPrefixKey, i];
+        drillDownController.restorationClass = nil;
+        [drillDownControllers addObject:drillDownController];
+
+        SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+        leftPlaceholderController.restorationIdentifier = @"leftPlaceholderController";
+        drillDownController.leftPlaceholderController = leftPlaceholderController;
+
+        SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
+        rightPlaceholderController.restorationIdentifier = @"rightPlaceholderController";
+        drillDownController.rightPlaceholderController = rightPlaceholderController;
+    }
+
+    NSAssert([self.window.rootViewController isKindOfClass:[UITabBarController class]], @"Expected root view controller to be instance of UITabBarController");
+    UITabBarController *tabBarController = (UITabBarController*)self.window.rootViewController;
+    tabBarController.viewControllers = drillDownControllers;
 }
 
 @end

@@ -12,4 +12,8 @@
 
 @property (strong, nonatomic) UIWindow *window;
 
+- (void)createWindow;
+- (UITabBarController *)createTabBarControllerAndSetAsRootViewController;
+- (void)createDrillDownControllersAndAddToTabBarController;
+
 @end
