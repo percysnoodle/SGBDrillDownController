@@ -8,6 +8,12 @@
 
 #import <UIKit/UIKit.h>
 
+typedef NS_ENUM(NSUInteger, SGBDrillDownControllerReplaceAnimationType)
+{
+    SGBDrillDownControllerReplaceAnimationTypeFade=0,
+    SGBDrillDownControllerReplaceAnimationTypePush,
+};
+
 extern NSString * const SGBDrillDownControllerException;
 extern NSString * const SGBDrillDownControllerWillPushNotification;
 extern NSString * const SGBDrillDownControllerDidPushNotification;
@@ -16,7 +22,7 @@ extern NSString * const SGBDrillDownControllerDidPopNotification;
 extern NSString * const SGBDrillDownControllerWillReplaceNotification;
 extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
-@interface SGBDrillDownController : UIViewController
+@interface SGBDrillDownController : UIViewController <UIGestureRecognizerDelegate, UIViewControllerRestoration>
 
 @property (nonatomic, assign, readonly) Class navigationBarClass;
 @property (nonatomic, assign, readonly) Class toolbarClass;
@@ -46,6 +52,7 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
 // Split behaviour
 - (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerReplaceAnimationType) animationType completion:(void (^)(void))completion;
 
 - (void)showRightViewController:(UIViewController *)rightViewController forLeftViewController:(UIViewController *)leftViewController animated:(BOOL)animated completion:(void(^)(void))completion;
 

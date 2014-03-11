@@ -10,16 +10,36 @@
 #import "SGBDrillDownContainerView.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define kAnimationDuration 0.33
-#define kTabBarControllerSelectionKeyPath @"self.tabBarController.selectedViewController"
+static NSString * const kSGBTabBarControllerSelectedViewControllerKeyPath = @"self.tabBarController.selectedViewController";
 
 #define ON_LEGACY_UI ([[[UIDevice currentDevice] systemVersion] integerValue] < 7)
+
+static const CGFloat kSGBDrillDownControllerAnimationDuration = 0.33;
+static const CGFloat kSGBDrillDownControllerHidingMaxFadingViewAlpha = 0.20;
+static const CGFloat kSGBDrillDownControllerParallaxFactor = 0.30;
+
+CGAffineTransform SGBDrillDownControllerLeftParallaxTransform(CGFloat maxOffset, CGFloat initialX, CGFloat updatedX, CGAffineTransform transform)
+{
+    CGFloat dx = fminf(maxOffset, (updatedX - initialX));
+    CGFloat translate = dx * kSGBDrillDownControllerParallaxFactor;
+    transform.tx = CGAffineTransformMakeTranslation(translate, 0.0).tx;
+    return transform;
+}
+
+CGRect SGBDrillDownControllerLeftParallaxFrame(CGRect leftControllerStartingFrame)
+{
+    return CGRectOffset(leftControllerStartingFrame, leftControllerStartingFrame.size.width * -kSGBDrillDownControllerParallaxFactor, 0.0);
+}
+
+CGRect SGBDrillDownControllerRightParallaxFrame(CGRect rightControllerStartingFrame)
+{
+    return CGRectOffset(rightControllerStartingFrame, rightControllerStartingFrame.size.width * kSGBDrillDownControllerParallaxFactor, 0.0);
+}
 
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
 {
     SGBDrillDownControllerPositionLeft,
     SGBDrillDownControllerPositionRight
-    
 };
 
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerVisibility)
@@ -30,6 +50,13 @@ typedef NS_ENUM(NSInteger, SGBDrillDownControllerVisibility)
     SGBDrillDownControllerVisibilityHiddenRight,
     SGBDrillDownControllerVisibilityOffscreenRight
 };
+
+typedef struct
+{
+    CGRect containerViewFrame;
+    CGRect controllerViewFrame;
+}
+SGBDrillDownChildControllerLayout;
 
 NSString * const SGBDrillDownControllerException = @"SGBDrillDownControllerException";
 NSString * const SGBDrillDownControllerWillPushNotification = @"SGBDrillDownControllerWillPushNotification";
@@ -56,8 +83,13 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 @property (nonatomic, strong, readwrite) UIImageView *rightToolbarImageView;
 @property (nonatomic, strong, readwrite) UIToolbar *rightToolbar;
 
+#ifdef __IPHONE_7_0
+@property (nonatomic, strong, readwrite) UIScreenEdgePanGestureRecognizer *swipeBackGestureRecognizer;
+#endif
+
 @property (nonatomic, assign) BOOL suspendLayout;
 @property (nonatomic, assign) BOOL isKVOObservingParent;
+@property (nonatomic, assign) BOOL animatingRotation;
 
 @end
 
@@ -78,6 +110,8 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     self = [super initWithNibName:nil bundle:nil];
     if (self)
     {
+        self.restorationClass = self.class;
+
         _navigationBarClass = navigationBarClass;
         _toolbarClass = toolbarClass;
         _toolbarsHidden = YES;
@@ -91,7 +125,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.isKVOObservingParent)
     {
-        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        [self removeObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath context:nil];
         self.isKVOObservingParent = NO;
     }
 }
@@ -120,6 +154,174 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     return [super navigationItem];
 }
 
+#pragma mark - State restoration
+
+// Increment this constant if you making breaking changes to state preservation/restoration.
+static const NSInteger kStateRestorationVersion = 1;
+static NSString * const kStateRestorationRestorationVersionKey = @"restorationVersion";
+
++ (UIViewController *)viewControllerWithRestorationIdentifierPath:(NSArray *)identifierComponents coder:(NSCoder *)coder
+{
+  if (kStateRestorationVersion > [coder decodeIntegerForKey:kStateRestorationRestorationVersionKey])
+  {
+      NSLog(@"SGBDrillDownController not restoring state because saved restoration state is from a previous version of the preservation/restoration logic.");
+      return nil;
+  } else
+  {
+      UIViewController *viewController = [[self alloc] init];
+      viewController.restorationIdentifier = [identifierComponents lastObject];
+      return viewController;
+  }
+}
+
+static NSString * const kStateRestorationNavigationBarClassNameKey = @"navigationBarClassName";
+static NSString * const kStateRestorationToolbarClassNameKey = @"toolbarClassName";
+static NSString * const kStateRestorationLeftToolbarKey = @"leftToolbar";
+static NSString * const kStateRestorationRightToolbarKey = @"rightToolbar";
+static NSString * const kStateRestorationNavigationBarsHiddenKey = @"navigationBarsHidden";
+static NSString * const kStateRestorationToolbarsHiddenKey = @"toolbarsHidden";
+static NSString * const kStateRestorationLeftControllerWidthKey = @"leftControllerWidth";
+static NSString * const kStateRestorationLeftPlaceholderControllerKey = @"leftPlaceholderController";
+static NSString * const kStateRestorationRightPlaceholderControllerKey = @"rightPlaceholderController";
+static NSString * const kStateRestorationViewControllersKey = @"viewControllers";
+static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @"hadRestorableRightViewController";
+
+- (void)encodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super encodeRestorableStateWithCoder:coder];
+
+    [coder encodeInteger:kStateRestorationVersion forKey:kStateRestorationRestorationVersionKey];
+
+    [coder encodeObject:NSStringFromClass(self.navigationBarClass) forKey:kStateRestorationNavigationBarClassNameKey];
+    [coder encodeObject:NSStringFromClass(self.toolbarClass) forKey:kStateRestorationToolbarClassNameKey];
+    if (self.leftToolbar)
+    {
+        [coder encodeObject:self.leftToolbar forKey:kStateRestorationLeftToolbarKey];
+    }
+    if (self.rightToolbar)
+    {
+        [coder encodeObject:self.rightToolbar forKey:kStateRestorationRightToolbarKey];
+    }
+    [coder encodeBool:self.navigationBarsHidden forKey:kStateRestorationNavigationBarsHiddenKey];
+    [coder encodeBool:self.toolbarsHidden forKey:kStateRestorationToolbarsHiddenKey];
+    [coder encodeFloat:self.leftControllerWidth forKey:kStateRestorationLeftControllerWidthKey];
+    if (self.leftPlaceholderController.restorationIdentifier.length)
+    {
+        [coder encodeObject:self.leftPlaceholderController forKey:kStateRestorationLeftPlaceholderControllerKey];
+    }
+    if (self.rightPlaceholderController.restorationIdentifier.length)
+    {
+        [coder encodeObject:self.rightPlaceholderController forKey:kStateRestorationRightPlaceholderControllerKey];
+    }
+    NSMutableArray *restorableViewControllers = [[NSMutableArray alloc] init];
+    for (UIViewController *viewController in self.viewControllers) {
+        if (viewController.restorationIdentifier.length)
+        {
+            [restorableViewControllers addObject:viewController];
+        }
+    }
+    [coder encodeObject:restorableViewControllers forKey:kStateRestorationViewControllersKey];
+    [coder encodeBool:(!!self.rightViewController.restorationIdentifier.length) forKey:kStateRestorationHadRestorableRightViewControllerKey];
+}
+
+- (void)decodeRestorableStateWithCoder:(NSCoder *)coder
+{
+    [super decodeRestorableStateWithCoder:coder];
+
+    if ([coder containsValueForKey:kStateRestorationNavigationBarClassNameKey])
+    {
+        Class navigationBarClass = NSClassFromString([coder decodeObjectForKey:kStateRestorationNavigationBarClassNameKey]);
+        if (navigationBarClass)
+        {
+            _navigationBarClass = navigationBarClass;
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationToolbarClassNameKey])
+    {
+        Class toolbarClass = NSClassFromString([coder decodeObjectForKey:kStateRestorationToolbarClassNameKey]);
+        if (toolbarClass)
+        {
+            _toolbarClass = toolbarClass;
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationLeftToolbarKey])
+    {
+        self.leftToolbar = [coder decodeObjectForKey:kStateRestorationLeftToolbarKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationRightToolbarKey])
+    {
+        self.rightToolbar = [coder decodeObjectForKey:kStateRestorationRightToolbarKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationNavigationBarsHiddenKey])
+    {
+        self.navigationBarsHidden = [coder decodeBoolForKey:kStateRestorationNavigationBarsHiddenKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationToolbarsHiddenKey])
+    {
+        self.toolbarsHidden = [coder decodeBoolForKey:kStateRestorationToolbarsHiddenKey];
+    }
+    if ([coder containsValueForKey:kStateRestorationLeftControllerWidthKey])
+    {
+        self.leftControllerWidth = [coder decodeFloatForKey:kStateRestorationLeftControllerWidthKey];
+    }
+
+    void (^addViewController)(UIViewController*, SGBDrillDownControllerPosition, SGBDrillDownControllerVisibility) = ^(UIViewController *viewController, SGBDrillDownControllerPosition position, SGBDrillDownControllerVisibility visibility) {
+        [self addChildViewController:viewController];
+        SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
+        [self.view addSubview:containerView];
+        [containerView addViewToContentView:viewController.view];
+        [self layoutController:viewController
+                    atPosition:position
+                    visibility:visibility];
+    };
+    if ([coder containsValueForKey:kStateRestorationLeftPlaceholderControllerKey])
+    {
+        self.leftPlaceholderController = [coder decodeObjectForKey:kStateRestorationLeftPlaceholderControllerKey];
+        if (self.leftPlaceholderController)
+        {
+            addViewController(self.leftPlaceholderController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityShowing);
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationRightPlaceholderControllerKey])
+    {
+        self.rightPlaceholderController = [coder decodeObjectForKey:kStateRestorationRightPlaceholderControllerKey];
+        if (self.rightPlaceholderController)
+        {
+            addViewController(self.rightPlaceholderController, SGBDrillDownControllerPositionRight, SGBDrillDownControllerVisibilityShowing);
+        }
+    }
+    if ([coder containsValueForKey:kStateRestorationViewControllersKey])
+    {
+        NSMutableArray *viewControllers = [coder decodeObjectForKey:kStateRestorationViewControllersKey];
+        UIViewController *rightViewController = nil;
+        if (viewControllers.count >= 2 && [coder decodeBoolForKey:kStateRestorationHadRestorableRightViewControllerKey])
+        {
+            rightViewController = [viewControllers lastObject];
+            [viewControllers removeLastObject];
+        }
+        self.leftViewControllers = viewControllers;
+        for (NSUInteger i = 0, count = viewControllers.count, top = count - 1; i < count; ++i)
+        {
+            UIViewController *viewController = viewControllers[i];
+            if (i == top)
+            {
+                addViewController(viewController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityShowing);
+            }
+            else
+            {
+                addViewController(viewController, SGBDrillDownControllerPositionLeft, SGBDrillDownControllerVisibilityOffscreenLeft);
+            }
+        }
+        [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:NO];
+        if (rightViewController)
+        {
+            self.rightViewController = rightViewController;
+            addViewController(self.rightViewController, SGBDrillDownControllerPositionRight, SGBDrillDownControllerVisibilityShowing);
+            [self.rightNavigationBar setItems:@[self.rightViewController.navigationItem] animated:NO];
+        }
+    }
+}
+
 #pragma mark - Parent controller
 
 // This duplicates UINavigationController's behaviour whereby it will pop to the root if the tab
@@ -129,7 +331,7 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (self.isKVOObservingParent)
     {
-        [self removeObserver:self forKeyPath:kTabBarControllerSelectionKeyPath context:nil];
+        [self removeObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath context:nil];
         self.isKVOObservingParent = NO;
     }
     
@@ -142,14 +344,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     
     if ([self.parentViewController isKindOfClass:[UITabBarController class]])
     {
-        [self addObserver:self forKeyPath:kTabBarControllerSelectionKeyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
+        [self addObserver:self forKeyPath:kSGBTabBarControllerSelectedViewControllerKeyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
         self.isKVOObservingParent = YES;
     }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if ([keyPath isEqual:kTabBarControllerSelectionKeyPath] && [change[@"old"] isEqual:change[@"new"]] && [change[@"new"] isEqual:self])
+    if ([keyPath isEqual:kSGBTabBarControllerSelectedViewControllerKeyPath] && [change[@"old"] isEqual:change[@"new"]] && [change[@"new"] isEqual:self])
     {
         [self popToRootViewControllerAnimated:YES completion:nil];
     }
@@ -292,6 +494,24 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     [self.view setNeedsLayout];
 }
 
+- (void)viewDidLoad
+{
+#ifdef __IPHONE_7_0
+    // Protect against running iOS7+ SDK compiled code on iOS6 and below...
+    if (NSClassFromString(@"UIScreenEdgePanGestureRecognizer"))
+    {
+        UIScreenEdgePanGestureRecognizer *swipeBackGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]
+                                                                        initWithTarget:self
+                                                                        action:@selector(swipeBackGestureRecognizerStateChanged:)];
+        swipeBackGestureRecognizer.edges = UIRectEdgeLeft;
+        swipeBackGestureRecognizer.minimumNumberOfTouches = 1;
+        swipeBackGestureRecognizer.maximumNumberOfTouches = 1;
+        swipeBackGestureRecognizer.delegate = self;
+        self.swipeBackGestureRecognizer = swipeBackGestureRecognizer;
+    }
+#endif
+}
+
 - (void)viewDidUnload
 {
     [super viewDidUnload];
@@ -312,15 +532,27 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 #pragma mark - Rotation
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    self.animatingRotation = YES;
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+    self.animatingRotation = NO;
+}
+
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
 {
     return YES;
 }
 
+#ifdef __IPHONE_7_0
 - (BOOL)shouldAutorotate
 {
-    return YES;
+    return (!self.swipeBackGestureRecognizer || (self.swipeBackGestureRecognizer.state == UIGestureRecognizerStatePossible));
 }
+#endif
 
 - (NSUInteger)supportedInterfaceOrientations
 {
@@ -402,8 +634,22 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 {
     if (!controller) return;
 
-    controller.view.autoresizingMask = UIViewAutoresizingNone;
+    SGBDrillDownChildControllerLayout layout = [self layoutForController:controller
+                                                              atPosition:position
+                                                              visibility:visibility];
+    if (!CGRectIsEmpty(layout.containerViewFrame) || !CGRectIsEmpty(layout.controllerViewFrame))
+    {
+        controller.view.frame = layout.controllerViewFrame;
+        controller.view.drillDownContainerView.frame = layout.containerViewFrame;
+    }
+}
 
+- (SGBDrillDownChildControllerLayout)layoutForController:(UIViewController *)controller
+                                              atPosition:(SGBDrillDownControllerPosition)position
+                                              visibility:(SGBDrillDownControllerVisibility)visibility
+{
+    if (!controller) return (SGBDrillDownChildControllerLayout){CGRectZero, CGRectZero};
+    
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
@@ -469,9 +715,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
             containerWidth = 0;
             break;
     }
-    
-    controller.view.frame = CGRectMake(viewLeft, 0, viewWidth, height);
-    controller.view.drillDownContainerView.frame = CGRectMake(containerLeft, top, containerWidth, height);
+
+    return (SGBDrillDownChildControllerLayout){
+        CGRectMake(containerLeft, top, containerWidth, height),
+        CGRectMake(viewLeft, 0, viewWidth, height)
+    };
 }
 
 - (void)viewDidLayoutSubviews
@@ -538,6 +786,132 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     UIGraphicsEndImageContext();
     return img;
 }
+
+#pragma mark - Gestures
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+{
+    return !self.animatingRotation;
+}
+
+#ifdef __IPHONE_7_0
+- (void)swipeBackGestureRecognizerStateChanged:(UIScreenEdgePanGestureRecognizer *)recognizer
+{
+    static CGRect previousLeftContainerStartFrame;
+    static CGRect previousLeftContainerInitialParallaxFrame;
+    static CGAffineTransform previousLeftContainerTransform;
+    static CGRect leftContainerStartFrame;
+    static CGRect leftControllerStartFrame;
+    static CGPoint startLocation;
+    static SGBDrillDownChildControllerLayout rightLayout;
+
+    UIView *leftControllerView = self.leftViewController.view;
+    SGBDrillDownContainerView *leftControllerContainerView = leftControllerView.drillDownContainerView;
+    UIViewController *previousLeftViewController = (self.leftViewControllers.count > 1 ? self.leftViewControllers[self.leftViewControllers.count - 2] : self.leftPlaceholderController);
+    SGBDrillDownContainerView *previousLeftControllerContainerView = previousLeftViewController.view.drillDownContainerView;
+
+    switch (recognizer.state)
+    {
+        case UIGestureRecognizerStateBegan:
+        {
+            self.suspendLayout = YES;
+
+            rightLayout = [self layoutForController:self.leftViewController
+                                         atPosition:SGBDrillDownControllerPositionRight
+                                         visibility:SGBDrillDownControllerVisibilityShowing];
+
+            startLocation = [recognizer locationInView:self.view];
+            previousLeftContainerStartFrame = previousLeftControllerContainerView.frame;
+            leftContainerStartFrame = leftControllerContainerView.frame;
+            leftControllerStartFrame = leftControllerView.frame;
+            previousLeftContainerTransform = previousLeftControllerContainerView.transform;
+
+            [self layoutController:previousLeftViewController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            previousLeftContainerInitialParallaxFrame = SGBDrillDownControllerLeftParallaxFrame(leftContainerStartFrame);
+            previousLeftControllerContainerView.frame = previousLeftContainerInitialParallaxFrame;
+            [previousLeftControllerContainerView addFadingView];
+            [previousLeftControllerContainerView setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            previousLeftControllerContainerView.hidden = NO;
+
+            [leftControllerContainerView addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+
+            UIViewController *rightViewController = (self.rightViewController ? self.rightViewController : self.rightPlaceholderController);
+            [self.view insertSubview:rightViewController.view.drillDownContainerView belowSubview:leftControllerContainerView];
+            [self.view insertSubview:previousLeftControllerContainerView belowSubview:leftControllerContainerView];
+
+            break;
+        }
+        case UIGestureRecognizerStateChanged:
+        {
+            CGPoint currentLocation = [recognizer locationInView:self.view];
+            CGFloat dx = fmaxf(0.0, fminf(self.leftControllerWidth, (currentLocation.x - startLocation.x)));
+            CGFloat openPercentage = (dx / self.leftControllerWidth);
+            CGFloat additionalWidth = openPercentage * (rightLayout.containerViewFrame.size.width - self.leftControllerWidth);
+
+            CGRect leftControllerContainerFrame = CGRectOffset(leftContainerStartFrame, dx, 0.0);
+            leftControllerContainerFrame.size.width = self.leftControllerWidth + additionalWidth;
+            leftControllerContainerView.frame =  leftControllerContainerFrame;
+
+            CGRect leftControllerFrame = leftControllerStartFrame;
+            leftControllerFrame.size.width += additionalWidth;
+            leftControllerView.frame = leftControllerFrame;
+
+            previousLeftControllerContainerView.transform = SGBDrillDownControllerLeftParallaxTransform(self.leftControllerWidth, 0.0, dx, previousLeftControllerContainerView.transform);
+
+            CGFloat fadeAlpha = (1.0 - openPercentage) * kSGBDrillDownControllerHidingMaxFadingViewAlpha;
+            [previousLeftControllerContainerView setFadingViewAlpha:fadeAlpha];
+
+            break;
+        }
+        case UIGestureRecognizerStateEnded:
+        {
+            CGRect transformedPreviousLeftContainerFrame = CGRectApplyAffineTransform(previousLeftContainerInitialParallaxFrame, previousLeftControllerContainerView.transform);
+            previousLeftControllerContainerView.transform = previousLeftContainerTransform;
+            previousLeftControllerContainerView.frame = transformedPreviousLeftContainerFrame;
+
+            CGPoint currentLocation = [recognizer locationInView:self.view];
+            CGFloat dx = fmaxf(0.0, fminf(self.leftControllerWidth, (currentLocation.x - startLocation.x)));
+            CGFloat openPercentage = (dx / self.leftControllerWidth);
+            CGFloat currentVelocity = [recognizer velocityInView:self.view].x;
+            if (fabsf(currentVelocity) > 500.0 || currentLocation.x > (self.leftControllerWidth * 0.66))
+            {
+                [self popViewControllerAnimated:YES
+                 animationDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
+                 isSwipeInteractivePop:YES
+                 additionalAnimations:nil
+                 completion:^{
+                     // We don't allow rotation while swiping...so trigger it if necessary after we're done.
+                     [UIViewController attemptRotationToDeviceOrientation];
+                 }];
+            }
+            else
+            {
+                [self animateWithDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
+                 animations:^{
+                     leftControllerContainerView.frame = leftContainerStartFrame;
+                     leftControllerView.frame = leftControllerStartFrame;
+                     previousLeftControllerContainerView.frame = previousLeftContainerStartFrame;
+                 }
+                 completion:^(BOOL finished) {
+                     self.suspendLayout = NO;
+                     previousLeftControllerContainerView.hidden = YES;
+                     [previousLeftControllerContainerView removeFadingView];
+                     [leftControllerContainerView removeShadowView];
+
+                     // We don't allow rotation while swiping...so trigger it if necessary after we're done.
+                     [UIViewController attemptRotationToDeviceOrientation];
+                 }];
+            }
+
+            break;
+        }
+        default:
+          break;
+    }
+}
+#endif
 
 #pragma mark - Controllers
 
@@ -610,6 +984,16 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     return [self.leftViewControllers lastObject];
 }
 
+- (void)configureLeftViewControllerForSwipeNavigation
+{
+    if (self.leftViewControllers.count >= 2 && self.swipeBackGestureRecognizer)
+    {
+        UIView* leftControllerContainerView = self.leftViewController.view.drillDownContainerView;
+        [self.swipeBackGestureRecognizer.view removeGestureRecognizer:self.swipeBackGestureRecognizer];
+        [leftControllerContainerView addGestureRecognizer:self.swipeBackGestureRecognizer];
+    }
+}
+
 - (void)animateWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
 {
     if (duration > 0)
@@ -661,9 +1045,9 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
     if (!viewController && !self.rightViewController) return;
-    
+
     if ([self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot push a controller that is already in the stack"];
-    
+
     if (ON_LEGACY_UI)
     {
         // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
@@ -672,101 +1056,144 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
         self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
     }
-    
-    // Work out what sort of push this is
+
+    SGBDrillDownContainerView *viewControllerContainer = nil;
+    if (viewController)
+    {
+        [self addChildViewController:viewController];
+        viewControllerContainer = [[SGBDrillDownContainerView alloc] init];
+        [viewControllerContainer addViewToContentView:viewController.view];
+        [self.view addSubview:viewControllerContainer];
+    }
+
+    UIViewController *oldLeftController = self.leftViewController;
+    SGBDrillDownContainerView *oldLeftContainerView = nil;
+    UIViewController *oldRightController = self.rightViewController;
+    SGBDrillDownContainerView *oldRightContainerView = nil;
+
     BOOL pushingLeftController = (self.viewControllers.count == 0);
     BOOL pushingNewRightController = ((self.viewControllers.count > 0) && (self.rightViewController == nil));
-    
-    UIViewController *oldLeftController = self.leftViewController;
-    UIViewController *oldRightController = self.rightViewController;
-    
+
     if (pushingLeftController)
     {
         [self.leftViewControllers addObject:viewController];
-        
-        // the first controller obscures the left placeholder
-        [self.leftPlaceholderController beginAppearanceTransition:NO animated:animated];
+
+        [viewControllerContainer addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+
+        [self layoutController:viewController
+                    atPosition:SGBDrillDownControllerPositionLeft
+                    visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
+
+        if (self.leftPlaceholderController)
+        {
+            [self.leftPlaceholderController beginAppearanceTransition:NO animated:animated];
+            SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+            [leftPlaceholderContainer addFadingView];
+            [leftPlaceholderContainer setFadingViewAlpha:0.0];
+
+            if (self.rightPlaceholderController)
+            {
+                SGBDrillDownContainerView *rightPlaceholderView = self.rightPlaceholderController.view.drillDownContainerView;
+                [self.view insertSubview:leftPlaceholderContainer belowSubview:rightPlaceholderView];
+            }
+        }
     }
     else if (pushingNewRightController)
     {
         self.rightViewController = viewController;
-        
-        // the second controller obscures the right placeholder
-        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
+
+        [viewControllerContainer addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+
+        [self layoutController:viewController
+                    atPosition:SGBDrillDownControllerPositionRight
+                    visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+
+        if (self.rightPlaceholderController)
+        {
+            [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
+            SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+            [rightPlaceholderContainer addFadingView];
+            [rightPlaceholderContainer setFadingViewAlpha:0.0];
+        }
     }
     else
     {
         [self.leftViewControllers addObject:oldRightController];
         self.rightViewController = viewController;
-        
-        // the old left controller will be hidden
+
+        oldRightContainerView = oldRightController.view.drillDownContainerView;
+        [oldRightContainerView addShadowViewAtPosition:SGBDrillDownContainerShadowLeft];
+
+        if (viewController)
+        {
+            [self layoutController:viewController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+            [viewControllerContainer addFadingView];
+            [viewControllerContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+        }
+        else if (self.rightPlaceholderController)
+        {
+            [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
+            [self layoutController:self.rightPlaceholderController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            SGBDrillDownContainerView *rightPlaceholderView = self.rightPlaceholderController.view.drillDownContainerView;
+            rightPlaceholderView.frame = SGBDrillDownControllerRightParallaxFrame(rightPlaceholderView.frame);
+            [rightPlaceholderView addFadingView];
+            [rightPlaceholderView setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            rightPlaceholderView.hidden = NO;
+        }
+
         [oldLeftController beginAppearanceTransition:NO animated:animated];
+        oldLeftContainerView = oldLeftController.view.drillDownContainerView;
+        [oldLeftContainerView addFadingView];
+        [oldLeftContainerView setFadingViewAlpha:0.0];
+
+        [self.view bringSubviewToFront:oldRightController.view.drillDownContainerView];
+
+        [viewControllerContainer addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+        [self.view bringSubviewToFront:viewControllerContainer];
     }
-    
-    if (viewController)
-    {
-        [self addChildViewController:viewController];
-        
-        SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
-        [containerView addViewToContentView:viewController.view];
-        [self.view addSubview:containerView];
-    }
-    else
-    {
-        [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
-        self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
-    }
-    
+
     if (pushingLeftController)
     {
-        // The new controller should be sized for the left
-        [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
-        
         // The controller's coming in from the left, so we want a pop animation
         UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
         fakeItem.hidesBackButton = YES;
         [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
         [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
         if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
-        
+
         self.leftToolbar.items = viewController.toolbarItems;
         if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
     else
     {
-        if (viewController)
-        {
-            // The new controller will should be sized for the right
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
-        }
-        else
-        {
-            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenRight];
-        }
-        
-        [self.rightNavigationBar setItems:[NSArray arrayWithObjects:viewController.navigationItem, nil] animated:animated];
-        if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
-        
-        self.rightToolbar.items = viewController.toolbarItems;
-        if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
-        
-        if (!pushingNewRightController)
-        {
-            [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:animated];
-            if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
-            
-            self.leftToolbar.items = [self.leftViewController toolbarItems];
-            if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
-        }
+
+      [self.rightNavigationBar setItems:[NSArray arrayWithObjects:viewController.navigationItem, nil] animated:animated];
+      if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
+
+      self.rightToolbar.items = viewController.toolbarItems;
+      if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
+
+      if (!pushingNewRightController)
+      {
+          [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:animated];
+          if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
+
+          self.leftToolbar.items = [self.leftViewController toolbarItems];
+          if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
+      }
     }
-    
+
     [self bringBarsToFront];
-    
-    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
-    [self animateWithDuration:animationDuration animations:^{
-        
+
+    NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
+    [self animateWithDuration:animationDuration
+     animations:^{
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPushNotification object:self];
-        
+
         if (ON_LEGACY_UI)
         {
             self.leftNavigationBar.alpha = 1;
@@ -774,163 +1201,264 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
             self.leftToolbar.alpha = 1;
             self.rightToolbar.alpha = 1;
         }
-        
+
         if (pushingLeftController)
         {
-            // The new controller moves to the left
-            [self layoutController:viewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
-            
-            // The left placeholder shrinks to the right
-            [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenRight];
-        }
-        else
-        {
-            if (pushingNewRightController)
+            [self layoutController:viewController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            if (self.leftPlaceholderController)
             {
-                // the placeholder shrinks to the left
-                [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenLeft];
+                SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+                [leftPlaceholderContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+                leftPlaceholderContainer.frame = SGBDrillDownControllerRightParallaxFrame(leftPlaceholderContainer.frame);
             }
-            else
-            {
-                // The old left controller shrinks to nothing
-                [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenLeft];
-                
-                // The old right controller moves to the left
-                [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
-            }
-            
-            if (viewController)
-            {
-                // The new controller moves to the right
-                [self layoutController:viewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-            }
-            else
-            {
-                [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-            }
-        }
-        
-    } completion:^(BOOL finished) {
-        
-        if (ON_LEGACY_UI)
-        {
-            self.leftNavigationImageView.image = nil;
-            self.rightNavigationImageView.image = nil;
-            self.leftToolbarImageView.image = nil;
-            self.rightToolbarImageView.image = nil;
-        }
-        
-        if (viewController)
-        {
-            [viewController didMoveToParentViewController:self];
-        }
-        else
-        {
-            [self.rightPlaceholderController endAppearanceTransition];
-        }
-        
-        if (pushingLeftController)
-        {
-            // the second controller obscured the right placeholder
-            [self.leftPlaceholderController endAppearanceTransition];
-            self.leftPlaceholderController.view.drillDownContainerView.hidden = YES;
         }
         else if (pushingNewRightController)
         {
-            // the second controller obscured the right placeholder
-            [self.rightPlaceholderController endAppearanceTransition];
-            self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
+            [self layoutController:viewController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            if (self.rightPlaceholderController)
+            {
+                SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+                [rightPlaceholderContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+                rightPlaceholderContainer.frame = SGBDrillDownControllerLeftParallaxFrame(rightPlaceholderContainer.frame);
+            }
         }
         else
         {
-            // the old left controller was hidden
-            [oldLeftController endAppearanceTransition];
-            oldLeftController.view.drillDownContainerView.hidden = YES;
+            [oldLeftContainerView setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            oldLeftContainerView.frame = SGBDrillDownControllerLeftParallaxFrame(oldLeftContainerView.frame);
+
+            [self layoutController:oldRightController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+
+            UIViewController *newRightController = (viewController ? viewController : self.rightPlaceholderController);
+            if (newRightController)
+            {
+                [self layoutController:newRightController
+                            atPosition:SGBDrillDownControllerPositionRight
+                            visibility:SGBDrillDownControllerVisibilityShowing];
+                SGBDrillDownContainerView *rightContainerView = newRightController.view.drillDownContainerView;
+                [rightContainerView setFadingViewAlpha:0.0];
+            }
         }
-        
-        if (completion) completion();
-        
-        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPushNotification object:self];
-        
-    }];
+     }
+     completion:^(BOOL finished) {
+         if (ON_LEGACY_UI)
+         {
+             self.leftNavigationImageView.image = nil;
+             self.rightNavigationImageView.image = nil;
+             self.leftToolbarImageView.image = nil;
+             self.rightToolbarImageView.image = nil;
+         }
+
+         if (pushingLeftController)
+         {
+             [viewControllerContainer removeShadowView];
+             if (self.leftPlaceholderController)
+             {
+                 [self.leftPlaceholderController endAppearanceTransition];
+                 SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+                 [leftPlaceholderContainer removeFadingView];
+                 leftPlaceholderContainer.hidden = YES;
+             }
+         }
+         else if (pushingNewRightController)
+         {
+             [viewControllerContainer removeShadowView];
+             if (self.rightPlaceholderController)
+             {
+                 [self.rightPlaceholderController endAppearanceTransition];
+                 SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+                 [rightPlaceholderContainer removeFadingView];
+                 rightPlaceholderContainer.hidden = YES;
+             }
+         }
+         else
+         {
+             [oldLeftController endAppearanceTransition];
+             [oldLeftContainerView removeFadingView];
+             oldLeftContainerView.hidden = YES;
+
+             [oldRightContainerView removeShadowView];
+
+             if (viewController)
+             {
+                 [viewControllerContainer removeShadowView];
+                 [viewControllerContainer removeFadingView];
+             }
+             else if (self.rightPlaceholderController)
+             {
+                 [self.rightPlaceholderController endAppearanceTransition];
+                 SGBDrillDownContainerView *rightPlaceholderView = self.rightPlaceholderController.view.drillDownContainerView;
+                 [rightPlaceholderView removeFadingView];
+             }
+         }
+
+         if (viewController)
+         {
+             [viewController didMoveToParentViewController:self];
+         }
+
+         [self configureLeftViewControllerForSwipeNavigation];
+
+         if (completion) completion();
+
+         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPushNotification object:self];
+     }];
 }
 
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
 {
+    return [self popViewControllerAnimated:animated
+                         animationDuration:kSGBDrillDownControllerAnimationDuration
+                     isSwipeInteractivePop:NO
+                      additionalAnimations:nil
+                                completion:completion];
+}
+
+- (UIViewController *)popViewControllerAnimated:(BOOL)animated
+                              animationDuration:(NSTimeInterval)animationDuration
+                          isSwipeInteractivePop:(BOOL)isSwipeInteractivePop
+                           additionalAnimations:(void (^)(void))additionalAnimations
+                                     completion:(void (^)(void))completion
+{
     if (self.viewControllers.count < 1) return nil;
-    
+
     if (ON_LEGACY_UI)
     {
-        // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
+        // Snapshot the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
         self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
         self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
         self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
         self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
     }
-    
-    // Work out what sort of pop this is
+
+    UIViewController *poppedViewController = nil;
+
     BOOL poppingLastController = (self.viewControllers.count == 1);
     BOOL poppingSecondLastController = ((self.viewControllers.count == 2) && (self.rightViewController != nil));
-    
-    UIViewController *poppedViewController;
-    
+
+    UIViewController *lastViewController = nil;
+    SGBDrillDownContainerView *lastViewContainer = nil;
+    UIViewController *secondToLastViewController = nil;
+    SGBDrillDownContainerView *secondToLastViewContainer = nil;
+    UIViewController *newRightController = nil;
+    SGBDrillDownContainerView *newRightContainer = nil;
+    UIViewController *newLeftController = nil;
+    SGBDrillDownContainerView *newLeftContainer = nil;
+    UIViewController *oldRightController = nil;
+
     if (poppingLastController)
     {
-        poppedViewController = self.leftViewController;
-        [self.leftViewControllers removeAllObjects];
-    }
-    else
-    {
-        poppedViewController = self.rightViewController;
-        
-        if (poppingSecondLastController)
+        lastViewController = [self.viewControllers firstObject];
+        lastViewContainer = lastViewController.view.drillDownContainerView;
+        [lastViewContainer addShadowViewAtPosition:SGBDrillDownContainerShadowRight];
+
+        if (self.leftPlaceholderController)
         {
-            self.rightViewController = nil;
+            [self.leftPlaceholderController beginAppearanceTransition:YES animated:animated];
+            [self layoutController:self.leftPlaceholderController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+            leftPlaceholderContainer.frame = SGBDrillDownControllerRightParallaxFrame(leftPlaceholderContainer.frame);
+            leftPlaceholderContainer.hidden = NO;
+            [leftPlaceholderContainer addFadingView];
+            [leftPlaceholderContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+
+            [self.view insertSubview:leftPlaceholderContainer belowSubview:lastViewContainer];
+
+            if (self.rightPlaceholderController)
+            {
+              SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+              [self.view insertSubview:rightPlaceholderContainer aboveSubview:leftPlaceholderContainer];
+            }
         }
-        else
-        {
-            self.rightViewController = [self.leftViewControllers lastObject];
-            [self.leftViewControllers removeObject:self.rightViewController];
-        }
-    }
-    
-    UIViewController *newLeftController = self.leftViewController;
-    UIViewController *newRightController = self.rightViewController;
-    
-    if (poppingLastController)
-    {
-        // the left placeholder will be revealed
-        [self.leftPlaceholderController beginAppearanceTransition:YES animated:animated];
-        self.leftPlaceholderController.view.drillDownContainerView.hidden = NO;
+
+        poppedViewController = lastViewController;
+        [self.leftViewControllers removeLastObject];
     }
     else if (poppingSecondLastController)
     {
-        // the placeholder will be revealed
-        [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
-        self.rightPlaceholderController.view.drillDownContainerView.hidden = NO;
+        secondToLastViewController = [self.viewControllers lastObject];
+        secondToLastViewContainer = secondToLastViewController.view.drillDownContainerView;
+        [secondToLastViewContainer addShadowViewAtPosition:SGBDrillDownContainerShadowLeft];
+        [self.view bringSubviewToFront:secondToLastViewContainer];
+
+        if (self.rightPlaceholderController)
+        {
+            [self.rightPlaceholderController beginAppearanceTransition:YES animated:animated];
+            [self layoutController:self.rightPlaceholderController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+            rightPlaceholderContainer.frame = SGBDrillDownControllerLeftParallaxFrame(rightPlaceholderContainer.frame);
+            rightPlaceholderContainer.hidden = NO;
+            [rightPlaceholderContainer addFadingView];
+            [rightPlaceholderContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+        }
+
+        poppedViewController = secondToLastViewController;
+        self.rightViewController = nil;
     }
     else
     {
-        // the new left controller will be revealed
+        newLeftController = self.leftViewControllers[self.leftViewControllers.count - 2];
         [newLeftController beginAppearanceTransition:YES animated:animated];
-        newLeftController.view.drillDownContainerView.hidden = NO;
+
+        newLeftContainer = newLeftController.view.drillDownContainerView;
+        if (!isSwipeInteractivePop)
+        {
+            [self layoutController:newLeftController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+
+
+            newLeftContainer.frame = SGBDrillDownControllerLeftParallaxFrame(newLeftContainer.frame);
+            [newLeftContainer addFadingView];
+            [newLeftContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            newLeftContainer.hidden = NO;
+        }
+
+        newRightController = self.leftViewController;
+        newRightContainer = newRightController.view.drillDownContainerView;
+        [newRightContainer addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
+        [self.view insertSubview:newRightContainer aboveSubview:newLeftContainer];
+
+        oldRightController = (self.rightViewController ? self.rightViewController : self.rightPlaceholderController);
+        if (oldRightController)
+        {
+            SGBDrillDownContainerView *oldRightContainer = oldRightController.view.drillDownContainerView;
+            [oldRightContainer addFadingView];
+            [oldRightContainer setFadingViewAlpha:0.0];
+            [self.view insertSubview:oldRightContainer belowSubview:newLeftContainer];
+        }
+
+        poppedViewController = self.rightViewController;
+        self.rightViewController = newRightController;
+        [self.leftViewControllers removeLastObject];
     }
-    
+
+    [poppedViewController beginAppearanceTransition:NO animated:animated];
+
     if (!poppingSecondLastController)
     {
         NSArray *newNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
-        
+
         [self.leftNavigationBar setItems:newNavigationItems animated:animated];
         if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
-        
+
         self.leftToolbar.items = newLeftController.toolbarItems;
         if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
-    
-    // insert a fake item so that the navigation bar does a pop animation
+
+    // We use a fake item so that the navigation bar does a pop animation
     UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
     fakeItem.hidesBackButton = YES;
-    
     if (newRightController)
     {
         [self.rightNavigationBar setItems:@[ newRightController.navigationItem, fakeItem ] animated:NO];
@@ -942,26 +1470,16 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [self.rightNavigationBar setItems:@[] animated:animated];
     }
     if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
-    
+
     self.rightToolbar.items = newRightController.toolbarItems;
     if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
-    
-    if (poppedViewController)
-    {
-        [poppedViewController willMoveToParentViewController:nil];
-    }
-    else
-    {
-        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
-    }
-    
+
     [self bringBarsToFront];
-    
-    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
-    [self animateWithDuration:animationDuration animations:^{
-        
+
+    [self animateWithDuration:animationDuration
+     animations:^{
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
-        
+
         if (ON_LEGACY_UI)
         {
             self.leftNavigationBar.alpha = 1;
@@ -969,226 +1487,195 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
             self.leftToolbar.alpha = 1;
             self.rightToolbar.alpha = 1;
         }
-        
+
         if (poppingLastController)
         {
-            // The left placeholder grows to fill the left
-            [self layoutController:self.leftPlaceholderController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
+            [self layoutController:lastViewController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
+            if (self.leftPlaceholderController)
+            {
+                [self layoutController:self.leftPlaceholderController
+                            atPosition:SGBDrillDownControllerPositionLeft
+                            visibility:SGBDrillDownControllerVisibilityShowing];
+                SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+                [leftPlaceholderContainer setFadingViewAlpha:0.0];
+            }
         }
         else if (poppingSecondLastController)
         {
-            // The right placeholder grows to fill the right
-            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-        }
-        else if (!poppedViewController)
-        {
-            // The placeholder shrinks to the right
-            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenRight];
-        }
-        
-        // The new left controller moves to the left
-        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
-        
-        // The new right controller moves to the right
-        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-        
-        if (poppingLastController)
-        {
-            // The popped controller moves off to the left
-            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
+            [self layoutController:secondToLastViewController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+
+            if (self.rightPlaceholderController)
+            {
+                [self layoutController:self.rightPlaceholderController
+                            atPosition:SGBDrillDownControllerPositionRight
+                            visibility:SGBDrillDownControllerVisibilityShowing];
+                SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+                [rightPlaceholderContainer setFadingViewAlpha:0.0];
+            }
         }
         else
         {
-            // The popped controller moves off to the right
-            [self layoutController:poppedViewController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+            [self layoutController:newLeftController
+                        atPosition:SGBDrillDownControllerPositionLeft
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+            [newLeftContainer setFadingViewAlpha:0.0];
+
+            [self layoutController:newRightController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityShowing];
+
+            if (oldRightController)
+            {
+                SGBDrillDownContainerView *oldRightContainer = oldRightController.view.drillDownContainerView;
+                oldRightContainer.frame = SGBDrillDownControllerRightParallaxFrame(oldRightContainer.frame);
+                [oldRightContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            }
         }
-        
-    } completion:^(BOOL finished) {
-        
-        if (poppedViewController)
+
+        if (additionalAnimations)
         {
-            [poppedViewController.view.drillDownContainerView removeFromSuperview];
-            [poppedViewController.view removeFromSuperview];
-            [poppedViewController removeFromParentViewController];
+            additionalAnimations();
         }
-        else
-        {
-            [self.rightPlaceholderController endAppearanceTransition];
-            self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
-        }
-        
+
+        [poppedViewController willMoveToParentViewController:nil];
+    }
+    completion:^(BOOL finished) {
         if (poppingLastController)
         {
-            // the left placeholder was revealed
-            [self.leftPlaceholderController endAppearanceTransition];
+            lastViewContainer.hidden = YES;
+            [lastViewContainer removeShadowView];
+            if (self.leftPlaceholderController)
+            {
+                [self.leftPlaceholderController endAppearanceTransition];
+                SGBDrillDownContainerView *leftPlaceholderContainer = self.leftPlaceholderController.view.drillDownContainerView;
+                [leftPlaceholderContainer removeFadingView];
+            }
         }
         else if (poppingSecondLastController)
         {
-            // the placeholder was revealed
-            [self.rightPlaceholderController endAppearanceTransition];
+            secondToLastViewContainer.hidden = YES;
+            [secondToLastViewContainer removeShadowView];
+
+            if (self.rightPlaceholderController)
+            {
+                [self.rightPlaceholderController endAppearanceTransition];
+                SGBDrillDownContainerView *rightPlaceholderContainer = self.rightPlaceholderController.view.drillDownContainerView;
+                [rightPlaceholderContainer removeFadingView];
+            }
         }
         else
         {
-            // the new left controller was revealed
             [newLeftController endAppearanceTransition];
+
+            [newRightContainer removeShadowView];
+            [newLeftContainer removeFadingView];
+
+            if (oldRightController)
+            {
+                SGBDrillDownContainerView *oldRightContainer = oldRightController.view.drillDownContainerView;
+                [oldRightContainer removeFadingView];
+                oldRightContainer.hidden = YES;
+            }
+
+            [self configureLeftViewControllerForSwipeNavigation];
         }
-        
+
+        [poppedViewController.view.drillDownContainerView removeFromSuperview];
+        [poppedViewController.view removeFromSuperview];
+        [poppedViewController endAppearanceTransition];
+        [poppedViewController removeFromParentViewController];
+
         if (completion) completion();
-        
+
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPopNotification object:self];
-        
     }];
-    
+
     return poppedViewController;
 }
 
 - (void)popToViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
 {
     if (viewController == nil) [NSException raise:SGBDrillDownControllerException format:@"Cannot pop to a nil controller"];
-    if (![self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot pop to a controller that is not in the stack"];
+
+    NSUInteger indexOfViewController = [self.leftViewControllers indexOfObject:viewController];
+    if (NSNotFound == indexOfViewController) [NSException raise:SGBDrillDownControllerException format:@"Cannot pop to a controller that is not in the stack"];
     
     if ((viewController == self.leftViewController) || (viewController == self.rightViewController))
     {
         // Nothing to do
         if (completion) completion();
-        return;
     }
-    
-    if (ON_LEGACY_UI)
-    {
-        // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
-        self.leftNavigationImageView.image = [self imageForView:self.leftNavigationBar];
-        self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
-        self.leftToolbarImageView.image = [self imageForView:self.leftToolbar];
-        self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
-    }
-    
-    // Work out what controllers to pop to
-    NSInteger indexOfOldLeftViewController = [self.viewControllers indexOfObject:self.leftViewController];
-    NSInteger indexOfNewLeftViewController = [self.viewControllers indexOfObject:viewController];
-    
-    // Special case - one pop
-    if (indexOfNewLeftViewController == indexOfOldLeftViewController - 1)
+    else if (indexOfViewController == self.leftViewControllers.count - 2)
     {
         [self popViewControllerAnimated:animated completion:completion];
-        return;
-    }
-    
-    UIViewController *oldLeftController = self.leftViewController;
-    UIViewController *oldRightController = self.rightViewController;
-    
-    UIViewController *newLeftController = viewController;
-    UIViewController *newRightController = self.viewControllers[indexOfNewLeftViewController + 1];
-    
-    NSArray *newLeftViewControllers = [self.leftViewControllers subarrayWithRange:NSMakeRange(0, indexOfNewLeftViewController + 1)];
-    // The old left controllers are leaving, except for the new right one, hence +2 not +1
-    NSArray * oldLeftViewControllers = [self.leftViewControllers subarrayWithRange:NSMakeRange(indexOfNewLeftViewController + 2, self.leftViewControllers.count - (indexOfNewLeftViewController + 2))];
-    
-    [self.leftViewControllers removeAllObjects];
-    [self.leftViewControllers addObjectsFromArray:newLeftViewControllers];
-    self.rightViewController = newRightController;
-    
-    [newLeftController beginAppearanceTransition:YES animated:animated];
-    newLeftController.view.drillDownContainerView.hidden = NO;
-    
-    [newRightController beginAppearanceTransition:YES animated:animated];
-    newRightController.view.drillDownContainerView.hidden = NO;
-    
-    // Fix up the nav and toolbar
-    NSArray *newNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
-    
-    [self.leftNavigationBar setItems:newNavigationItems animated:animated];
-    if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
-    
-    self.leftToolbar.items = newLeftController.toolbarItems;
-    if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
-    
-    // insert a fake item so that the navigation bar does a pop animation
-    UINavigationItem *lastItem = [[UINavigationItem alloc] init];
-    lastItem.hidesBackButton = YES;
-    [self.rightNavigationBar setItems:@[ newRightController.navigationItem, lastItem ] animated:NO];
-    [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
-    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
-    
-    self.rightToolbar.items = newRightController.toolbarItems;
-    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
-    
-    // The old controllers are going away
-    [oldLeftController willMoveToParentViewController:nil];
-    
-    if (oldRightController)
-    {
-        [oldRightController willMoveToParentViewController:nil];
     }
     else
     {
-        [self.rightPlaceholderController beginAppearanceTransition:NO animated:animated];
+      NSMutableArray *leftViewControllers = [[NSMutableArray alloc] init];
+      for (NSUInteger i = 0, lastIndex = indexOfViewController + 2; i < lastIndex; ++i)
+      {
+          [leftViewControllers addObject:self.leftViewControllers[i]];
+      }
+      NSMutableArray *intermediaryLeftViewControllers = [[NSMutableArray alloc] init];
+      for (NSUInteger i = indexOfViewController + 2, count = self.leftViewControllers.count - 1; i < count; ++i)
+      {
+          UIViewController* intermediateViewController = self.leftViewControllers[i];
+          [intermediateViewController beginAppearanceTransition:NO animated:NO];
+          [intermediaryLeftViewControllers addObject:intermediateViewController];
+      }
+      UIViewController *leftViewController = self.leftViewController;
+      [leftViewController beginAppearanceTransition:NO animated:animated];
+
+      self.leftViewControllers = leftViewControllers;
+
+      UIViewController *tempLeftViewController = [leftViewControllers lastObject];
+      [self layoutController:tempLeftViewController
+                  atPosition:SGBDrillDownControllerPositionLeft
+                  visibility:SGBDrillDownControllerVisibilityShowing];
+      SGBDrillDownContainerView *tempLeftViewContainer = tempLeftViewController.view.drillDownContainerView;
+      tempLeftViewContainer.hidden = NO;
+
+      SGBDrillDownContainerView *leftViewContainer = leftViewController.view.drillDownContainerView;
+      [self.view bringSubviewToFront:leftViewContainer];
+      [self.view insertSubview:tempLeftViewContainer belowSubview:leftViewContainer];
+      UIViewController *newLeftViewController = leftViewControllers[leftViewControllers.count - 2];
+      SGBDrillDownContainerView *newLeftViewContainer = newLeftViewController.view.drillDownContainerView;
+      [self.view insertSubview:newLeftViewContainer belowSubview:leftViewContainer];
+
+      [leftViewContainer addShadowViewAtPosition:SGBDrillDownContainerShadowRight];
+
+      [self popViewControllerAnimated:animated
+       animationDuration:kSGBDrillDownControllerAnimationDuration
+       isSwipeInteractivePop:NO
+       additionalAnimations:^{
+         [self layoutController:leftViewController
+                     atPosition:SGBDrillDownControllerPositionLeft
+                     visibility:SGBDrillDownControllerVisibilityOffscreenLeft];
+       }
+       completion:^{
+           for (UIViewController *intermediateViewController in intermediaryLeftViewControllers)
+           {
+               [intermediateViewController.view.drillDownContainerView removeFromSuperview];
+               [intermediateViewController.view removeFromSuperview];
+               [intermediateViewController endAppearanceTransition];
+               [intermediateViewController removeFromParentViewController];
+           }
+           [leftViewContainer removeShadowView];
+           [leftViewContainer removeFromSuperview];
+           [leftViewController.view removeFromSuperview];
+           [leftViewController endAppearanceTransition];
+           [leftViewController removeFromParentViewController];
+
+           if (completion)
+           {
+               completion();
+           }
+       }];
     }
-    
-    [self bringBarsToFront];
-    
-    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
-    [self animateWithDuration:animationDuration animations:^{
-        
-        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
-        
-        if (ON_LEGACY_UI)
-        {
-            self.leftNavigationBar.alpha = 1;
-            self.rightNavigationBar.alpha = 1;
-            self.leftToolbar.alpha = 1;
-            self.rightToolbar.alpha = 1;
-        }
-        
-        // The new left one moves to the left
-        [self layoutController:newLeftController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityShowing];
-        
-        // The new right moves right
-        [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-        
-        // The old left moves off
-        [self layoutController:oldLeftController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
-        
-        if (oldRightController)
-        {
-            // The old right moves off
-            [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityOffscreenRight];
-        }
-        else
-        {
-            // The right placeholder shrinks
-            [self layoutController:self.rightPlaceholderController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityHiddenRight];
-        }
-        
-    } completion:^(BOOL finished) {
-        
-        for (UIViewController *oldViewController in oldLeftViewControllers)
-        {
-            [oldViewController.view.drillDownContainerView removeFromSuperview];
-            [oldViewController.view removeFromSuperview];
-            [oldViewController removeFromParentViewController];
-        }
-        
-        if (oldRightController)
-        {
-            [oldRightController.view.drillDownContainerView removeFromSuperview];
-            [oldRightController.view removeFromSuperview];
-            [oldRightController removeFromParentViewController];
-        }
-        else
-        {
-            [self.rightPlaceholderController endAppearanceTransition];
-            self.rightPlaceholderController.view.drillDownContainerView.hidden = YES;
-        }
-        
-        [newLeftController endAppearanceTransition];
-        [newRightController endAppearanceTransition];
-        
-        if (completion) completion();
-        
-        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidPopNotification object:self];
-        
-    }];
 }
 
 - (void)popToRootViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion
@@ -1199,6 +1686,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 }
 
 - (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void (^)(void))completion
+{
+    [self replaceRightViewController:viewController
+                            animated:animated
+                       animationType:SGBDrillDownControllerReplaceAnimationTypeFade
+                          completion:completion];
+}
+
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerReplaceAnimationType) animationType completion:(void (^)(void))completion
 {
     if (!self.leftViewController) [NSException raise:SGBDrillDownControllerException format:@"Cannot replace right controller without a left controller"];
     
@@ -1211,19 +1706,11 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
     
     if (viewController && [self.viewControllers containsObject:viewController]) [NSException raise:SGBDrillDownControllerException format:@"Cannot replace with a controller that is already in the stack"];
     
-    UIViewController *oldRightController = self.rightViewController;
-    UIViewController *newRightController = viewController;
-    
     // Snap the existing controllers so we can do fades. This forces layout, so we have to do it before we start.
     self.rightNavigationImageView.image = [self imageForView:self.rightNavigationBar];
     self.rightToolbarImageView.image = [self imageForView:self.rightToolbar];
-    
-    [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:NO];
-    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
-    
-    self.rightToolbar.items = newRightController.toolbarItems;
-    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
-    
+
+    UIViewController *oldRightController = self.rightViewController;
     if (oldRightController)
     {
         self.rightViewController = nil;
@@ -1233,10 +1720,12 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         oldRightController = self.rightPlaceholderController;
         [oldRightController beginAppearanceTransition:NO animated:animated];
     }
-    
-    if (newRightController)
+
+    UIViewController *newRightController;
+    if (viewController)
     {
-        self.rightViewController = newRightController;
+        newRightController = viewController;
+        self.rightViewController = viewController;
         [self addChildViewController:viewController];
         
         SGBDrillDownContainerView *containerView = [[SGBDrillDownContainerView alloc] init];
@@ -1249,49 +1738,112 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         [newRightController beginAppearanceTransition:YES animated:animated];
         newRightController.view.drillDownContainerView.hidden = NO;
     }
-    
-    // We'll fade the new controller in on the right
-    [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
-    newRightController.view.drillDownContainerView.alpha = 0;
-    
+
+    switch (animationType) {
+        case SGBDrillDownControllerReplaceAnimationTypeFade:
+            [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:NO];
+            if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
+
+            self.rightToolbar.items = newRightController.toolbarItems;
+            if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
+
+            // We'll fade the new controller in on the right
+            [self layoutController:newRightController atPosition:SGBDrillDownControllerPositionRight visibility:SGBDrillDownControllerVisibilityShowing];
+            newRightController.view.drillDownContainerView.alpha = 0;
+
+            break;
+
+        case SGBDrillDownControllerReplaceAnimationTypePush:
+            [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:animated];
+            if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
+
+            self.rightToolbar.items = newRightController.toolbarItems;
+            if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
+
+            [self layoutController:newRightController
+                        atPosition:SGBDrillDownControllerPositionRight
+                        visibility:SGBDrillDownControllerVisibilityOffscreenRight];
+            [newRightController.view.drillDownContainerView addShadowViewAtPosition:SGBDrillDownContainerShadowLeft];
+            SGBDrillDownContainerView *oldRightContainerView = oldRightController.view.drillDownContainerView;
+            [oldRightContainerView addFadingView];
+            [oldRightContainerView setFadingViewAlpha:0.0];
+            [self.view insertSubview:oldRightContainerView belowSubview:self.leftViewController.view.drillDownContainerView];
+
+            break;
+    }
+
     [self bringBarsToFront];
     
-    NSTimeInterval animationDuration = animated ? kAnimationDuration : 0;
-    [self animateWithDuration:animationDuration animations:^{
+    NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
+    [self animateWithDuration:animationDuration
+     animations:^{
         
-        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
-        
-        if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 1;
-        if (ON_LEGACY_UI) self.rightToolbar.alpha = 1;
-        
-        oldRightController.view.drillDownContainerView.alpha = 0;
-        newRightController.view.drillDownContainerView.alpha = 1;
-        
-    } completion:^(BOOL finished) {
-        
-        if (newRightController == self.rightPlaceholderController)
-        {
-            [newRightController endAppearanceTransition];
-        }
-        
-        if (oldRightController == self.rightPlaceholderController)
-        {
-            [self layoutController:oldRightController atPosition:SGBDrillDownControllerPositionLeft visibility:SGBDrillDownControllerVisibilityHiddenLeft];
-            oldRightController.view.drillDownContainerView.hidden = YES;
-            [oldRightController endAppearanceTransition];
-        }
-        else
-        {
-            [oldRightController.view.drillDownContainerView removeFromSuperview];
-            [oldRightController.view removeFromSuperview];
-            [oldRightController removeFromParentViewController];
-        }
-        
-        if (completion) completion();
-        
-        [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidReplaceNotification object:self];
-        
-    }];
+         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
+
+          switch (animationType) {
+              case SGBDrillDownControllerReplaceAnimationTypeFade:
+                  if (ON_LEGACY_UI)
+                  {
+                      self.rightNavigationBar.alpha = 1;
+                      self.rightToolbar.alpha = 1;
+                  }
+
+                  oldRightController.view.drillDownContainerView.alpha = 0;
+                  newRightController.view.drillDownContainerView.alpha = 1;
+
+                  break;
+
+             case SGBDrillDownControllerReplaceAnimationTypePush:
+                 [self layoutController:newRightController
+                             atPosition:SGBDrillDownControllerPositionRight
+                             visibility:SGBDrillDownControllerVisibilityShowing];
+
+                 SGBDrillDownContainerView *oldRightContainerView = oldRightController.view.drillDownContainerView;
+                 oldRightContainerView.frame = SGBDrillDownControllerLeftParallaxFrame(oldRightContainerView.frame);
+                 [oldRightContainerView setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+
+                 break;
+         }
+     }
+     completion:^(BOOL finished) {
+         switch (animationType) {
+             case SGBDrillDownControllerReplaceAnimationTypeFade:
+                 break;
+
+             case SGBDrillDownControllerReplaceAnimationTypePush:
+                 [newRightController.view.drillDownContainerView removeShadowView];
+                 break;
+         }
+
+         if (newRightController == self.rightPlaceholderController)
+         {
+             [newRightController endAppearanceTransition];
+         }
+
+         if (oldRightController == self.rightPlaceholderController)
+         {
+             [self layoutController:oldRightController
+                         atPosition:SGBDrillDownControllerPositionLeft
+                         visibility:SGBDrillDownControllerVisibilityHiddenLeft];
+             oldRightController.view.drillDownContainerView.hidden = YES;
+             [oldRightController endAppearanceTransition];
+         }
+         else
+         {
+             [oldRightController.view.drillDownContainerView removeFromSuperview];
+             [oldRightController.view removeFromSuperview];
+             [oldRightController removeFromParentViewController];
+         }
+
+         if (viewController)
+         {
+             [viewController didMoveToParentViewController:self];
+         }
+
+         if (completion) completion();
+
+         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerDidReplaceNotification object:self];
+     }];
 }
 
 - (void)showRightViewController:(UIViewController *)rightViewController

@@ -11,6 +11,9 @@
 @interface SGBDemoAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
-- (void)resetWindow;
+
+- (void)createWindow;
+- (UITabBarController *)createTabBarControllerAndSetAsRootViewController;
+- (void)createDrillDownControllersAndAddToTabBarController;
 
 @end

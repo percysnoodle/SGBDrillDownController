@@ -16,6 +16,8 @@
 
 @property (nonatomic, assign) BOOL animationSwitchOn;
 
+- (void)setScreenNumber:(NSInteger)number;
+
 @end
 
 @protocol SGBDemoViewDelegate <NSObject>
@@ -29,6 +31,7 @@
 - (void)demoViewToolbarsButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewReplaceButtonTapped:(SGBDemoView *)demoView;
 - (void)demoViewRemoveButtonTapped:(SGBDemoView *)demoView;
+- (void)demoViewToggleBackgroundAlphaButtonTapped:(SGBDemoView *)demoView;
 
 @end
 
