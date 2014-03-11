@@ -73,6 +73,7 @@ static NSString * const kStateRestorationNumberKey = @"number";
 {
     self.view = [[SGBDemoView  alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
     [self updateBackgroundColor];
+    [self.demoView setScreenNumber:self.number];
     self.demoView.delegate = self;
     self.demoView.animationSwitchOn = self.useAnimation;
 }
@@ -136,6 +137,7 @@ static NSString * const kStateRestorationNumberKey = @"number";
     if (self.isViewLoaded)
     {
         [self updateBackgroundColor];
+        [self.demoView setScreenNumber:number];
     }
 }
 

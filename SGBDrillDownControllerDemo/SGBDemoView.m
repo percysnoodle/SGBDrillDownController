@@ -21,6 +21,9 @@
 @property (nonatomic, strong) UIButton *removeButton;
 @property (nonatomic, strong) UIButton *toggleBackgroundAlphaButton;
 
+// To support KIF tests.
+@property (nonatomic, strong) UILabel *screenNumberLabel;
+
 @end
 
 @implementation SGBDemoView
@@ -98,6 +101,13 @@
         [_toggleBackgroundAlphaButton setTitle:@"Toggle Background Alpha" forState:UIControlStateNormal];
         [_toggleBackgroundAlphaButton addTarget:self action:@selector(toggleBackgroundAlphaButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_toggleBackgroundAlphaButton];
+
+        _screenNumberLabel = [[UILabel alloc] init];
+        _screenNumberLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        _screenNumberLabel.backgroundColor = [UIColor clearColor];
+        _screenNumberLabel.font = [UIFont systemFontOfSize:[UIFont labelFontSize]];
+        _screenNumberLabel.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:_screenNumberLabel];
     }
     return self;
 }
@@ -116,6 +126,14 @@
     self.replaceButton.frame = CGRectMake(20, 384, self.bounds.size.width - 40, 44);
     self.removeButton.frame = CGRectMake(20, 436, self.bounds.size.width - 40, 44);
     self.toggleBackgroundAlphaButton.frame = CGRectMake(20, 488, self.bounds.size.width - 40, 44);
+
+    self.screenNumberLabel.frame = CGRectMake(20, self.bounds.size.height - 40, self.bounds.size.width - 40, 20);
+}
+
+- (void)setScreenNumber:(NSInteger)number
+{
+    self.screenNumberLabel.text = [NSString stringWithFormat:@"Screen %d View", number];
+    self.screenNumberLabel.accessibilityLabel = [NSString stringWithFormat:@"Screen %d View", number];
 }
 
 - (void)setWillAppearCount:(NSInteger)willAppearCount
