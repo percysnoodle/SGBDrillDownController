@@ -20,6 +20,18 @@ $ pod install
 
 for more information about pods and podfiles, visit the [CocoaPods](http://cocoapods.org) website.
 
+Testing
+-------
+
+SGBDrillDownController uses KIF to run a series of functional tests in the demo project. To run the tests
+
+- Install KIF by running `pod install`
+- Opening `SGBDrillDownControllerDemo.xcworkspace` (_not_ `SGBDrillDownControllerDemo.xcodeproj`)
+- Choose the `Funtional Tests` target
+- Build and Run
+
+Note: Xcode (via LLVM) has added a compiler warning for "Unintentional Root Class" (LLVM's `-Wobj-root-class`) that KIF triggers with its `LoadableCategory.h` hack. Since CocoaPods enables all warnings to the highest level, this warning is treated as an error, and you will not be able to build or run the tests until you adjust the settings. To change this settting, select the *Pods* project, navigate to the *Build Settings* for the *Pods-KIF* (not just *Pods*) target, and select *No* for *Unintentional Root Class* under the section *Apple LLVM 5.0 - Warnings - Objective C*. Unfortunately every time you run `pod install` this setting will be reset and you will need to follow these steps again.
+
 iOS State Preservation and Restoration
 --------------------------------------
 
