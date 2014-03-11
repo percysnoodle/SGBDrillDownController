@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C413C1A318CE8C100063D3E6 /* SGBDemoTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = F6462749188D3BD700D8919E /* SGBDemoTabBarController.m */; };
 		CBF91B21C1AE46D3AD2B94D8 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D9DA60BF03E46D3A23E9802 /* libPods.a */; };
 		D6D4A4B816D8F47D0091B8F7 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B716D8F47D0091B8F7 /* UIKit.framework */; };
 		D6D4A4BA16D8F47D0091B8F7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6D4A4B916D8F47D0091B8F7 /* Foundation.framework */; };
@@ -323,6 +324,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C413C1A318CE8C100063D3E6 /* SGBDemoTabBarController.m in Sources */,
 				F649F4621717E31800B99C35 /* main.m in Sources */,
 				F649F4631717E31800B99C35 /* SGBDemoAppDelegate.m in Sources */,
 				F649F4641717E31800B99C35 /* SGBDrillDownController.m in Sources */,
