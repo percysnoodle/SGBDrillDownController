@@ -982,7 +982,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
 - (void)configureLeftViewControllerForSwipeNavigation
 {
-    if (self.leftViewControllers.count >= 2)
+    if (self.leftViewControllers.count >= 2 && self.swipeBackGestureRecognizer)
     {
         UIView* leftControllerContainerView = self.leftViewController.view.drillDownContainerView;
         [self.swipeBackGestureRecognizer.view removeGestureRecognizer:self.swipeBackGestureRecognizer];
