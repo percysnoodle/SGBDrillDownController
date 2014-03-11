@@ -1283,10 +1283,9 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
                  [oldRightContainerView removeShadowView];
 
-                 [viewControllerContainer removeShadowView];
-
                  if (viewController)
                  {
+                     [viewControllerContainer removeShadowView];
                      [viewControllerContainer removeFadingView];
                  }
                  else if (self.rightPlaceholderController)
