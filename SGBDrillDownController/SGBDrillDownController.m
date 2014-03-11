@@ -1685,11 +1685,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 {
     [self replaceRightViewController:viewController
                             animated:animated
-                       animationType:SGBDrillDownControllerAnimationTypeFade
+                       animationType:SGBDrillDownControllerReplaceAnimationTypeFade
                           completion:completion];
 }
 
-- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerAnimationType) animationType completion:(void (^)(void))completion
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerReplaceAnimationType) animationType completion:(void (^)(void))completion
 {
     if (!self.leftViewController) [NSException raise:SGBDrillDownControllerException format:@"Cannot replace right controller without a left controller"];
     
@@ -1736,7 +1736,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     }
 
     switch (animationType) {
-        case SGBDrillDownControllerAnimationTypeFade:
+        case SGBDrillDownControllerReplaceAnimationTypeFade:
             [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:NO];
             if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
 
@@ -1749,7 +1749,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
             break;
 
-        case SGBDrillDownControllerAnimationTypePush:
+        case SGBDrillDownControllerReplaceAnimationTypePush:
             [self.rightNavigationBar setItems:[NSArray arrayWithObjects:newRightController.navigationItem, nil] animated:animated];
             if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
 
@@ -1777,7 +1777,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
          [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
 
           switch (animationType) {
-              case SGBDrillDownControllerAnimationTypeFade:
+              case SGBDrillDownControllerReplaceAnimationTypeFade:
                   if (ON_LEGACY_UI)
                   {
                       self.rightNavigationBar.alpha = 1;
@@ -1789,7 +1789,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
                   break;
 
-             case SGBDrillDownControllerAnimationTypePush:
+             case SGBDrillDownControllerReplaceAnimationTypePush:
                  [self layoutController:newRightController
                              atPosition:SGBDrillDownControllerPositionRight
                              visibility:SGBDrillDownControllerVisibilityShowing];
@@ -1803,10 +1803,10 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
      }
      completion:^(BOOL finished) {
          switch (animationType) {
-             case SGBDrillDownControllerAnimationTypeFade:
+             case SGBDrillDownControllerReplaceAnimationTypeFade:
                  break;
 
-             case SGBDrillDownControllerAnimationTypePush:
+             case SGBDrillDownControllerReplaceAnimationTypePush:
                  [newRightController.view.drillDownContainerView removeShadowView];
                  break;
          }

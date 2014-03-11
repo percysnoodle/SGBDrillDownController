@@ -8,10 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
-typedef NS_ENUM(NSUInteger, SGBDrillDownControllerAnimationType)
+typedef NS_ENUM(NSUInteger, SGBDrillDownControllerReplaceAnimationType)
 {
-    SGBDrillDownControllerAnimationTypeFade=0,
-    SGBDrillDownControllerAnimationTypePush,
+    SGBDrillDownControllerReplaceAnimationTypeFade=0,
+    SGBDrillDownControllerReplaceAnimationTypePush,
 };
 
 extern NSString * const SGBDrillDownControllerException;
@@ -52,7 +52,7 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 
 // Split behaviour
 - (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated completion:(void(^)(void))completion;
-- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerAnimationType) animationType completion:(void (^)(void))completion;
+- (void)replaceRightViewController:(UIViewController *)viewController animated:(BOOL)animated animationType:(SGBDrillDownControllerReplaceAnimationType) animationType completion:(void (^)(void))completion;
 
 - (void)showRightViewController:(UIViewController *)rightViewController forLeftViewController:(UIViewController *)leftViewController animated:(BOOL)animated completion:(void(^)(void))completion;
 
