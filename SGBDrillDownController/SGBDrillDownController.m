@@ -36,6 +36,14 @@ CGRect SGBDrillDownControllerRightParallaxFrame(CGRect rightControllerStartingFr
     return CGRectOffset(rightControllerStartingFrame, rightControllerStartingFrame.size.width * kSGBDrillDownControllerParallaxFactor, 0.0);
 }
 
+UINavigationItem * SGBDrillDownControllerCreateFakeNavigationItem()
+{
+    UINavigationItem *item = [[UINavigationItem alloc] init];
+    item.hidesBackButton = YES;
+    item.title = @"";
+    return item;
+}
+
 typedef NS_ENUM(NSInteger, SGBDrillDownControllerPosition)
 {
     SGBDrillDownControllerPositionLeft,
@@ -1074,6 +1082,12 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     BOOL pushingLeftController = (self.viewControllers.count == 0);
     BOOL pushingNewRightController = ((self.viewControllers.count > 0) && (self.rightViewController == nil));
 
+    // We use fake items to cause navigation bar animations when necessary.
+    UINavigationItem *rightFakeItem = SGBDrillDownControllerCreateFakeNavigationItem();
+    UINavigationItem *leftFakeItem = SGBDrillDownControllerCreateFakeNavigationItem();
+
+    UIBarButtonItem *emptyBackBarButtonItem = nil;
+
     if (pushingLeftController)
     {
         [self.leftViewControllers addObject:viewController];
@@ -1097,6 +1111,18 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
                 [self.view insertSubview:leftPlaceholderContainer belowSubview:rightPlaceholderView];
             }
         }
+
+        UINavigationItem *leftNavigationItem = viewController.navigationItem;
+        leftNavigationItem.hidesBackButton = YES;
+        [self.leftNavigationBar setItems:@[ leftNavigationItem, leftFakeItem ] animated:NO];
+        [self.leftNavigationBar setItems:@[ leftNavigationItem ] animated:YES];
+
+        if (!leftNavigationItem.backBarButtonItem)
+        {
+            // I'm so, so sorry. iOS 7.1 shows a random ellipsis in place of the back button on the first pop unless I do this.
+            emptyBackBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+            leftNavigationItem.backBarButtonItem = emptyBackBarButtonItem;
+        }
     }
     else if (pushingNewRightController)
     {
@@ -1115,6 +1141,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
             [rightPlaceholderContainer addFadingView];
             [rightPlaceholderContainer setFadingViewAlpha:0.0];
         }
+
+        UINavigationItem* rightNavigationItem = viewController.navigationItem;
+        rightNavigationItem.hidesBackButton = YES;
+        [self.rightNavigationBar setItems:@[ rightFakeItem ] animated:NO];
+        [self.rightNavigationBar setItems:@[ rightFakeItem, rightNavigationItem ] animated:animated];
     }
     else
     {
@@ -1154,37 +1185,57 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         [viewControllerContainer addShadowViewAtPosition:SGBDrillDownContainerShadowBoth];
         [self.view bringSubviewToFront:viewControllerContainer];
+
+        UINavigationItem *rightNavigationItem = viewController.navigationItem;
+        rightNavigationItem.hidesBackButton = YES;
+        UINavigationItem *oldRightNavigationItem = oldRightController.navigationItem;
+        if (viewController)
+        {
+            if (oldRightNavigationItem.title)
+            {
+                rightFakeItem.title = oldRightNavigationItem.title;
+            }
+            [self.rightNavigationBar setItems:@[ rightFakeItem ] animated:NO];
+            [self.rightNavigationBar setItems:@[ rightFakeItem, rightNavigationItem ] animated:animated];
+        }
+
+        NSArray *leftNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
+        ((UINavigationItem *)[leftNavigationItems lastObject]).hidesBackButton = NO;
+        [self.leftNavigationBar setItems:leftNavigationItems animated:animated];
     }
 
     if (pushingLeftController)
     {
-        // The controller's coming in from the left, so we want a pop animation
-        UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
-        fakeItem.hidesBackButton = YES;
-        [self.leftNavigationBar setItems:@[ viewController.navigationItem, fakeItem ] animated:NO];
-        [self.leftNavigationBar setItems:@[ viewController.navigationItem ] animated:animated];
-        if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
+
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationBar.alpha = 0;
+            self.leftToolbar.alpha = 0;
+        }
 
         self.leftToolbar.items = viewController.toolbarItems;
-        if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
     else
     {
+        if (ON_LEGACY_UI)
+        {
+            self.rightNavigationBar.alpha = 0;
+            self.rightToolbar.alpha = 0;
+        }
 
-      [self.rightNavigationBar setItems:[NSArray arrayWithObjects:viewController.navigationItem, nil] animated:animated];
-      if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
+        self.rightToolbar.items = viewController.toolbarItems;
 
-      self.rightToolbar.items = viewController.toolbarItems;
-      if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
+        if (!pushingNewRightController)
+        {
 
-      if (!pushingNewRightController)
-      {
-          [self.leftNavigationBar setItems:[self.leftViewControllers valueForKey:@"navigationItem"] animated:animated];
-          if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
+            if (ON_LEGACY_UI)
+            {
+                self.leftNavigationBar.alpha = 0;
+                self.leftToolbar.alpha = 0;
+            }
 
-          self.leftToolbar.items = [self.leftViewController toolbarItems];
-          if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
-      }
+            self.leftToolbar.items = [self.leftViewController toolbarItems];
+        }
     }
 
     [self bringBarsToFront];
@@ -1196,10 +1247,17 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         if (ON_LEGACY_UI)
         {
-            self.leftNavigationBar.alpha = 1;
-            self.rightNavigationBar.alpha = 1;
-            self.leftToolbar.alpha = 1;
-            self.rightToolbar.alpha = 1;
+            if (!pushingLeftController)
+            {
+                self.rightNavigationBar.alpha = 1;
+                self.rightToolbar.alpha = 1;
+            }
+
+            if (!pushingNewRightController)
+            {
+                self.leftNavigationBar.alpha = 1;
+                self.leftToolbar.alpha = 1;
+            }
         }
 
         if (pushingLeftController)
@@ -1265,6 +1323,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
                  [leftPlaceholderContainer removeFadingView];
                  leftPlaceholderContainer.hidden = YES;
              }
+
+             if (emptyBackBarButtonItem && self.leftViewController.navigationItem.backBarButtonItem == emptyBackBarButtonItem)
+             {
+                 self.leftViewController.navigationItem.backBarButtonItem = nil;
+             }
          }
          else if (pushingNewRightController)
          {
@@ -1296,6 +1359,8 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
                  SGBDrillDownContainerView *rightPlaceholderView = self.rightPlaceholderController.view.drillDownContainerView;
                  [rightPlaceholderView removeFadingView];
              }
+
+             rightFakeItem.title = @"";
          }
 
          if (viewController)
@@ -1352,6 +1417,12 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     SGBDrillDownContainerView *newLeftContainer = nil;
     UIViewController *oldRightController = nil;
 
+    // We use fake items to cause navigation bar animations when necessary.
+    UINavigationItem *rightFakeItem = SGBDrillDownControllerCreateFakeNavigationItem();
+    UINavigationItem *leftFakeItem = SGBDrillDownControllerCreateFakeNavigationItem();
+
+    UIBarButtonItem *emptyBackBarButtonItem = nil;
+
     if (poppingLastController)
     {
         lastViewController = [self.viewControllers firstObject];
@@ -1381,6 +1452,9 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         poppedViewController = lastViewController;
         [self.leftViewControllers removeLastObject];
+
+        [self.leftNavigationBar setItems:@[ lastViewController.navigationItem ] animated:NO];
+        [self.leftNavigationBar setItems:@[ lastViewController.navigationItem, leftFakeItem ] animated:animated];
     }
     else if (poppingSecondLastController)
     {
@@ -1404,6 +1478,10 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         poppedViewController = secondToLastViewController;
         self.rightViewController = nil;
+
+        secondToLastViewController.navigationItem.hidesBackButton = YES;
+        [self.rightNavigationBar setItems:@[ rightFakeItem, secondToLastViewController.navigationItem ] animated:NO];
+        [self.rightNavigationBar setItems:@[ rightFakeItem ] animated:animated];
     }
     else
     {
@@ -1441,38 +1519,50 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
         poppedViewController = self.rightViewController;
         self.rightViewController = newRightController;
         [self.leftViewControllers removeLastObject];
+
+        NSArray *leftNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
+        ((UINavigationItem *)leftNavigationItems[0]).hidesBackButton = NO;
+        [self.leftNavigationBar setItems:leftNavigationItems animated:animated];
+
+        UINavigationItem *oldRightNavigationItem = oldRightController.navigationItem;
+        oldRightNavigationItem.hidesBackButton = YES;
+        UINavigationItem *rightNavigationItem = newRightController.navigationItem;
+        rightNavigationItem.hidesBackButton = YES;
+
+        if (!rightNavigationItem.backBarButtonItem)
+        {
+            // I'm so, so sorry. iOS 7.1 shows a random ellipsis in place of the back button on the first pop unless I do this.
+            emptyBackBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+            rightNavigationItem.backBarButtonItem = emptyBackBarButtonItem;
+        }
+
+        [self.rightNavigationBar setItems:@[ rightNavigationItem, oldRightNavigationItem ] animated:NO];
+        [self.rightNavigationBar setItems:@[ rightNavigationItem ] animated:animated];
     }
 
     [poppedViewController beginAppearanceTransition:NO animated:animated];
 
     if (!poppingSecondLastController)
     {
-        NSArray *newNavigationItems = [self.leftViewControllers valueForKey:@"navigationItem"];
-
-        [self.leftNavigationBar setItems:newNavigationItems animated:animated];
-        if (ON_LEGACY_UI) self.leftNavigationBar.alpha = 0;
+        if (ON_LEGACY_UI)
+        {
+            self.leftNavigationBar.alpha = 0;
+            self.leftToolbar.alpha = 0;
+        }
 
         self.leftToolbar.items = newLeftController.toolbarItems;
-        if (ON_LEGACY_UI) self.leftToolbar.alpha = 0;
     }
 
-    // We use a fake item so that the navigation bar does a pop animation
-    UINavigationItem *fakeItem = [[UINavigationItem alloc] init];
-    fakeItem.hidesBackButton = YES;
-    if (newRightController)
+    if (!poppingLastController)
     {
-        [self.rightNavigationBar setItems:@[ newRightController.navigationItem, fakeItem ] animated:NO];
-        [self.rightNavigationBar setItems:@[ newRightController.navigationItem ] animated:animated];
-    }
-    else
-    {
-        [self.rightNavigationBar setItems:@[ fakeItem ] animated:NO];
-        [self.rightNavigationBar setItems:@[] animated:animated];
-    }
-    if (ON_LEGACY_UI) self.rightNavigationBar.alpha = 0;
+        if (ON_LEGACY_UI)
+        {
+            self.rightNavigationBar.alpha = 0;
+            self.rightToolbar.alpha = 0;
+        }
 
-    self.rightToolbar.items = newRightController.toolbarItems;
-    if (ON_LEGACY_UI) self.rightToolbar.alpha = 0;
+        self.rightToolbar.items = newRightController.toolbarItems;
+    }
 
     [self bringBarsToFront];
 
@@ -1482,10 +1572,17 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         if (ON_LEGACY_UI)
         {
-            self.leftNavigationBar.alpha = 1;
-            self.rightNavigationBar.alpha = 1;
-            self.leftToolbar.alpha = 1;
-            self.rightToolbar.alpha = 1;
+            if (!poppingSecondLastController)
+            {
+                self.leftNavigationBar.alpha = 1;
+                self.leftToolbar.alpha = 1;
+            }
+
+            if (!poppingLastController)
+            {
+                self.rightNavigationBar.alpha = 1;
+                self.rightToolbar.alpha = 1;
+            }
         }
 
         if (poppingLastController)
@@ -1533,6 +1630,11 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
                 SGBDrillDownContainerView *oldRightContainer = oldRightController.view.drillDownContainerView;
                 oldRightContainer.frame = SGBDrillDownControllerRightParallaxFrame(oldRightContainer.frame);
                 [oldRightContainer setFadingViewAlpha:kSGBDrillDownControllerHidingMaxFadingViewAlpha];
+            }
+
+            if (emptyBackBarButtonItem && self.rightViewController.navigationItem.backBarButtonItem == emptyBackBarButtonItem)
+            {
+                self.rightViewController.navigationItem.backBarButtonItem = nil;
             }
         }
 

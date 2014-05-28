@@ -69,3 +69,8 @@ Unfortunately neither UITabBarController nor UINavigationController call the `sh
     }
 
     @end
+
+Unexpected Behavior
+-------------------
+
+Due to bugs introduced by Apple in iOS 7.1 in UINavigationBar, the drill down controller manages the `hidesBackButton` property on the `navigationItem` properties of the view controllers it contains. It seems unlikely that this will cause any issues as it maintains the general expectations of how the navigation bars will look, but if you encounter issues in a specific use case, at least you know why the behavior exists.
