@@ -1079,8 +1079,14 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     UIViewController *oldRightController = self.rightViewController;
     SGBDrillDownContainerView *oldRightContainerView = nil;
 
-    BOOL pushingLeftController = (self.viewControllers.count == 0);
-    BOOL pushingNewRightController = ((self.viewControllers.count > 0) && (self.rightViewController == nil));
+    // While because of our precondition check that early-returns from this method
+    // if you attempt to push a nil view controller when the right view controller
+    // is already nil we can assume here that viewController is implicitly not-nil
+    // for the following two conditions, we check it explicitly for the sake of
+    // LLVM's analyzer so that it knows for sure that later one we aren't potentially
+    // breaking APIs by attempting to add a nil viewController to an array.
+    BOOL pushingLeftController = viewController && (self.viewControllers.count == 0);
+    BOOL pushingNewRightController = viewController && ((self.viewControllers.count > 0) && (self.rightViewController == nil));
 
     // We use fake items to cause navigation bar animations when necessary.
     UINavigationItem *rightFakeItem = SGBDrillDownControllerCreateFakeNavigationItem();
@@ -1524,8 +1530,16 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
         ((UINavigationItem *)leftNavigationItems[0]).hidesBackButton = NO;
         [self.leftNavigationBar setItems:leftNavigationItems animated:animated];
 
-        UINavigationItem *oldRightNavigationItem = oldRightController.navigationItem;
-        oldRightNavigationItem.hidesBackButton = YES;
+        UINavigationItem *oldRightNavigationItem;
+        if (oldRightController)
+        {
+            oldRightNavigationItem = oldRightController.navigationItem;
+            oldRightNavigationItem.hidesBackButton = YES;
+        }
+        else
+        {
+            oldRightNavigationItem = rightFakeItem;
+        }
         UINavigationItem *rightNavigationItem = newRightController.navigationItem;
         rightNavigationItem.hidesBackButton = YES;
 
