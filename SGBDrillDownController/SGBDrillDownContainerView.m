@@ -145,6 +145,9 @@ static const CGFloat kSGBDrillDownContainerTransitionShadowRadius = 5.0;
         UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
 
+        CGGradientRelease(gradient);
+        CGColorSpaceRelease(colorspace);
+
         *shadowImageRef = [image resizableImageWithCapInsets:UIEdgeInsetsMake(1.0, kSGBDrillDownContainerTransitionShadowRadius, 1.0, kSGBDrillDownContainerTransitionShadowRadius)];
     }
     return *shadowImageRef;
