@@ -383,8 +383,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
         self.rightNavigationImageView.hidden = NO;
     }
     
-    NSTimeInterval duration = animated ? UINavigationControllerHideShowBarDuration : 0;
-    [self animateWithDuration:duration animations:^{
+    [self animate:animated withDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _navigationBarsHidden = navigationBarsHidden;
         [self performLayout];
@@ -417,8 +416,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
         self.rightToolbarImageView.hidden = NO;
     }
     
-    NSTimeInterval duration = animated ? UINavigationControllerHideShowBarDuration : 0;
-    [self animateWithDuration:duration animations:^{
+    [self animate:animated withDuration:UINavigationControllerHideShowBarDuration animations:^{
         
         _toolbarsHidden = toolbarsHidden;
         [self performLayout];
@@ -924,7 +922,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
             }
             else
             {
-                [self animateWithDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
+                [self animate:YES withDuration:(kSGBDrillDownControllerAnimationDuration * (1.0 - openPercentage))
                  animations:^{
                      leftControllerContainerView.frame = leftContainerStartFrame;
                      leftControllerView.frame = leftControllerStartFrame;
@@ -1030,9 +1028,9 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     }
 }
 
-- (void)animateWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
+- (void)animate:(BOOL)animated withDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void (^)(BOOL))completion
 {
-    if (duration > 0)
+    if (animated)
     {
         self.suspendLayout = YES;
         
@@ -1274,8 +1272,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
     [self bringBarsToFront];
 
-    NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
-    [self animateWithDuration:animationDuration
+    [self animate:animated withDuration:kSGBDrillDownControllerAnimationDuration
      animations:^{
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPushNotification object:self];
 
@@ -1608,7 +1605,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
     [self bringBarsToFront];
 
-    [self animateWithDuration:animationDuration
+    [self animate:animated withDuration:animationDuration
      animations:^{
         [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillPopNotification object:self];
 
@@ -1918,8 +1915,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
     [self bringBarsToFront];
     
-    NSTimeInterval animationDuration = animated ? kSGBDrillDownControllerAnimationDuration : 0;
-    [self animateWithDuration:animationDuration
+    [self animate:animated withDuration:kSGBDrillDownControllerAnimationDuration
      animations:^{
         
          [[NSNotificationCenter defaultCenter] postNotificationName:SGBDrillDownControllerWillReplaceNotification object:self];
