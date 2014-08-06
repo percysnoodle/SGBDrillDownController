@@ -91,6 +91,7 @@ static NSString * const kStateRestorationNumberKey = @"number";
             case 4: baseColor = [UIColor greenColor]; break;
             case 5: baseColor = [UIColor cyanColor]; break;
             case 6: baseColor = [UIColor blueColor]; break;
+            case 0: baseColor = [UIColor purpleColor]; break;
         }
     }
 

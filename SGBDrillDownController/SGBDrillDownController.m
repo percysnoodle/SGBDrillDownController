@@ -63,6 +63,7 @@ typedef struct
 {
     CGRect containerViewFrame;
     CGRect controllerViewFrame;
+    UIEdgeInsets contentInset;
 }
 SGBDrillDownChildControllerLayout;
 
@@ -645,10 +646,16 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     SGBDrillDownChildControllerLayout layout = [self layoutForController:controller
                                                               atPosition:position
                                                               visibility:visibility];
+    
     if (!CGRectIsEmpty(layout.containerViewFrame) || !CGRectIsEmpty(layout.controllerViewFrame))
     {
         controller.view.frame = layout.controllerViewFrame;
         controller.view.drillDownContainerView.frame = layout.containerViewFrame;
+        
+        if ([controller.view respondsToSelector:@selector(setContentInset:)])
+        {
+            [(id)controller.view setContentInset:layout.contentInset];
+        }
     }
 }
 
@@ -661,23 +668,40 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
     CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
+    UIEdgeInsets contentInset = UIEdgeInsetsZero;
     
     if ([self respondsToSelector:@selector(bottomLayoutGuide)])
     {
-        height -= [self.bottomLayoutGuide length];
+        contentInset.bottom = [self.bottomLayoutGuide length];
     }
     
     if (!self.navigationBarsHidden)
     {
         CGFloat navigationBarHeight = ON_LEGACY_UI ? 44 : 64;
-        top += navigationBarHeight;
-        height -= navigationBarHeight;
+        
+        if (self.leftNavigationBar.translucent && self.rightNavigationBar.translucent && [controller respondsToSelector:@selector(edgesForExtendedLayout)] && (controller.edgesForExtendedLayout & UIRectEdgeTop))
+        {
+            contentInset.top = navigationBarHeight;
+        }
+        else
+        {
+            top += navigationBarHeight;
+            height -= navigationBarHeight;
+        }
     }
     
     if (!self.toolbarsHidden)
     {
         CGFloat toolbarHeight = 44;
-        height -= toolbarHeight;
+        
+        if (self.leftToolbar.translucent && self.rightToolbar.translucent && [controller respondsToSelector:@selector(edgesForExtendedLayout)] && (controller.edgesForExtendedLayout & UIRectEdgeBottom))
+        {
+            contentInset.bottom += toolbarHeight;
+        }
+        else
+        {
+            height -= toolbarHeight;
+        }
     }
     
     CGFloat containerLeft = 0, viewLeft = 0;
@@ -723,10 +747,14 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
             containerWidth = 0;
             break;
     }
+    
+    CGRect containerRect = CGRectMake(containerLeft, top, containerWidth, height);
+    CGRect controllerRect = CGRectMake(viewLeft, 0, viewWidth, containerRect.size.height);
 
     return (SGBDrillDownChildControllerLayout){
-        CGRectMake(containerLeft, top, containerWidth, height),
-        CGRectMake(viewLeft, 0, viewWidth, height)
+        containerRect,
+        controllerRect,
+        contentInset
     };
 }
 

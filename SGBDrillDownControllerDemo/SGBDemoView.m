@@ -34,6 +34,7 @@
     if (self)
     {
         self.opaque = YES;
+        self.alwaysBounceVertical = YES;
         
         _appearanceCountLabel = [[UILabel alloc] init];
         _appearanceCountLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;

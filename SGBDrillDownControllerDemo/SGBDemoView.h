@@ -8,7 +8,7 @@
 
 @protocol SGBDemoViewDelegate;
 
-@interface SGBDemoView : UIView
+@interface SGBDemoView : UIScrollView
 
 @property (nonatomic, weak) id<SGBDemoViewDelegate> delegate;
 @property (nonatomic, assign) NSInteger willAppearCount;
