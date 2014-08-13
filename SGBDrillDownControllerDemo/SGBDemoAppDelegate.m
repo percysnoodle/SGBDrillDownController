@@ -132,7 +132,6 @@ static NSString * const kSGBStateRestorationDrillDownControllerTabPrefixKey = @"
         SGBDrillDownController *drillDownController = [[SGBDrillDownController alloc] init];
         drillDownController.restorationIdentifier = [NSString stringWithFormat:@"%@-%i", kSGBStateRestorationDrillDownControllerTabPrefixKey, i];
         drillDownController.restorationClass = nil;
-        [drillDownControllers addObject:drillDownController];
 
         SGBDemoController *leftPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
         leftPlaceholderController.restorationIdentifier = @"leftPlaceholderController";
@@ -141,6 +140,19 @@ static NSString * const kSGBStateRestorationDrillDownControllerTabPrefixKey = @"
         SGBDemoController *rightPlaceholderController = [[SGBDemoController alloc] initWithNumber:0];
         rightPlaceholderController.restorationIdentifier = @"rightPlaceholderController";
         drillDownController.rightPlaceholderController = rightPlaceholderController;
+        
+        if (i == 2)
+        {
+            drillDownController.title = @"Embedded";
+            drillDownController.propagatesNavigationItem = NO;
+            drillDownController.navigationBarPosition = UIBarPositionTop;
+            UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:drillDownController];
+            [drillDownControllers addObject:navigationController];
+        }
+        else
+        {
+            [drillDownControllers addObject:drillDownController];
+        }
     }
 
     NSAssert([self.window.rootViewController isKindOfClass:[UITabBarController class]], @"Expected root view controller to be instance of UITabBarController");

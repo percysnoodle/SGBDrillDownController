@@ -33,10 +33,16 @@ extern NSString * const SGBDrillDownControllerDidReplaceNotification;
 @property (nonatomic, assign) BOOL navigationBarsHidden;
 - (void)setNavigationBarsHidden:(BOOL)navigationBarsHidden animated:(BOOL)animated;
 
+@property (nonatomic, assign) UIBarPosition navigationBarPosition;
+@property (nonatomic, assign) BOOL propagatesNavigationItem;
+
 @property (nonatomic, strong, readonly) UIToolbar *leftToolbar;
 @property (nonatomic, strong, readonly) UIToolbar *rightToolbar;
 @property (nonatomic, assign) BOOL toolbarsHidden;
 - (void)setToolbarsHidden:(BOOL)toolbarsHidden animated:(BOOL)animated;
+
+@property (nonatomic, assign) UIBarPosition toolbarPosition;
+@property (nonatomic, assign) BOOL propagatesTabBarItem;
 
 // Navigation stack behaviour
 @property (nonatomic, strong, readonly) NSArray *viewControllers;

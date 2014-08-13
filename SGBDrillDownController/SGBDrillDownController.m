@@ -122,8 +122,14 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
         self.restorationClass = self.class;
 
         _navigationBarClass = navigationBarClass;
+        _navigationBarPosition = UIBarPositionTopAttached;
+        _propagatesNavigationItem = YES;
+        
         _toolbarClass = toolbarClass;
+        _toolbarPosition = UIBarPositionBottom;
         _toolbarsHidden = YES;
+        _propagatesTabBarItem = YES;
+        
         _leftControllerWidth = 320;
         _leftViewControllers = [[NSMutableArray alloc] init];
     }
@@ -141,23 +147,29 @@ NSString * const SGBDrillDownControllerDidReplaceNotification = @"SGBDrillDownCo
 
 - (UITabBarItem *)tabBarItem
 {
-    if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] tabBarItem])
+    if (self.propagatesTabBarItem)
     {
-        return [self.leftViewControllers[0] tabBarItem];
+        if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] tabBarItem])
+        {
+            return [self.leftViewControllers[0] tabBarItem];
+        }
+        else if ([self.leftPlaceholderController tabBarItem])
+        {
+            return [self.leftPlaceholderController tabBarItem];
+        }
     }
-    else if ([self.leftPlaceholderController tabBarItem])
-    {
-        return [self.leftPlaceholderController tabBarItem];
-    }
-
+    
     return [super tabBarItem];
 }
 
 - (UINavigationItem *)navigationItem
 {
-    if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] navigationItem])
+    if (self.propagatesNavigationItem)
     {
-        return [self.leftViewControllers[0] navigationItem];
+        if ((self.leftViewControllers.count > 0) && [self.leftViewControllers[0] navigationItem])
+        {
+            return [self.leftViewControllers[0] navigationItem];
+        }
     }
     
     return [super navigationItem];
@@ -436,9 +448,14 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
 #pragma mark - View loading / unloading
 
+- (UIScrollView *)scrollView
+{
+    return (UIScrollView *)self.view;
+}
+
 - (void)loadView
 {
-    self.view = [[UIView alloc] init];
+    self.view = [[UIScrollView alloc] init];
     
     if (ON_LEGACY_UI)
     {
@@ -572,7 +589,12 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 {
     CGFloat top = 0;
     
-    CGFloat navigationBarHeight = ON_LEGACY_UI ? 44 : 64;
+    CGFloat navigationBarHeight = 44;
+    if ((self.navigationBarPosition == UIBarPositionTopAttached) && !ON_LEGACY_UI)
+    {
+        navigationBarHeight = 64;
+    }
+    
     if (self.navigationBarsHidden) top -= navigationBarHeight;
     
     CGRect frame;
@@ -594,11 +616,7 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
 - (void)layoutToolbar:(UIToolbar *)toolbar imageView:(UIImageView *)imageView atPosition:(SGBDrillDownControllerPosition)position
 {
-    CGFloat top = self.view.bounds.size.height;
-    if ([self respondsToSelector:@selector(bottomLayoutGuide)])
-    {
-        top -= [self.bottomLayoutGuide length];
-    }
+    CGFloat top = self.view.bounds.size.height - (self.scrollView.contentInset.top + self.scrollView.contentInset.bottom);
     
     CGFloat toolbarHeight = 44;
     if (!self.toolbarsHidden) top -= toolbarHeight;
@@ -663,23 +681,22 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 {
     if (!controller) return (SGBDrillDownChildControllerLayout){CGRectZero, CGRectZero};
     
-    CGFloat top = 0;
     CGFloat width = self.view.bounds.size.width;
     CGFloat height = self.view.bounds.size.height;
-    UIEdgeInsets contentInset = UIEdgeInsetsZero;
-    
-    if ([self respondsToSelector:@selector(bottomLayoutGuide)])
-    {
-        contentInset.bottom = [self.bottomLayoutGuide length];
-    }
+    UIEdgeInsets contentInset = self.scrollView.contentInset;
+    CGFloat top = -contentInset.top;
     
     if (!self.navigationBarsHidden)
     {
-        CGFloat navigationBarHeight = ON_LEGACY_UI ? 44 : 64;
+        CGFloat navigationBarHeight = 44;
+        if ((self.navigationBarPosition == UIBarPositionTopAttached) && !ON_LEGACY_UI)
+        {
+            navigationBarHeight = 64;
+        }
         
         if (self.leftNavigationBar.translucent && self.rightNavigationBar.translucent && [controller respondsToSelector:@selector(edgesForExtendedLayout)] && (controller.edgesForExtendedLayout & UIRectEdgeTop))
         {
-            contentInset.top = navigationBarHeight;
+            contentInset.top += navigationBarHeight;
         }
         else
         {
@@ -2016,8 +2033,8 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
 - (UIBarPosition)positionForBar:(id<UIBarPositioning>)bar
 {
-    if ((bar == self.leftNavigationBar) || (bar == self.rightNavigationBar)) return UIBarPositionTopAttached;
-    if ((bar == self.leftToolbar) || (bar == self.rightToolbar)) return UIBarPositionBottom;
+    if ((bar == self.leftNavigationBar) || (bar == self.rightNavigationBar)) return self.navigationBarPosition;
+    if ((bar == self.leftToolbar) || (bar == self.rightToolbar)) return self.toolbarPosition;
     return UIBarPositionAny;
 }
 
