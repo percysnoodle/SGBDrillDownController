@@ -1163,8 +1163,16 @@ static NSString * const kStateRestorationHadRestorableRightViewControllerKey = @
 
         UINavigationItem *leftNavigationItem = viewController.navigationItem;
         leftNavigationItem.hidesBackButton = YES;
-        [self.leftNavigationBar setItems:@[ leftNavigationItem, leftFakeItem ] animated:NO];
-        [self.leftNavigationBar setItems:@[ leftNavigationItem ] animated:YES];
+        
+        if (animated)
+        {
+            [self.leftNavigationBar setItems:@[ leftNavigationItem, leftFakeItem ] animated:NO];
+            [self.leftNavigationBar setItems:@[ leftNavigationItem ] animated:YES];
+        }
+        else
+        {
+            [self.leftNavigationBar setItems:@[ leftNavigationItem ] animated:NO];
+        }
 
         if (!leftNavigationItem.backBarButtonItem)
         {
