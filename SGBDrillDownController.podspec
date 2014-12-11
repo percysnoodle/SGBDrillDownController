@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "SGBDrillDownController"
-  s.version      = "1.3.1"
+  s.version      = "1.3.2"
   s.summary      = "A parent view controller for the iPad which manages a stack of controllers while keeping the top two controllers visible."
   s.homepage     = "https://github.com/percysnoodle/SGBDrillDownController"
 
